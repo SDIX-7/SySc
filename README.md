@@ -1,0 +1,141 @@
+# 质量信息系统
+
+一个基于 Flask + Vue 的质量信息系统，包含控制图分析、异常报警等功能。
+
+## 项目结构
+
+```
+├── back_end/      # Flask 后端
+├── front_end/     # Vue 前端
+├── email_test.py  # 邮件测试脚本
+├── LICENSE
+└── README.md
+```
+
+## 技术栈
+
+### 后端 (back_end/)
+- Flask - Python Web 框架
+- OpenCV - 图像处理
+- Pandas - 数据处理
+- Matplotlib - 图表绘制
+
+### 前端 (front_end/)
+- Vue.js - JavaScript 框架
+- Vuex - 状态管理
+- Vue Router - 路由管理
+
+## 功能特性
+
+1. **数据采集与管理**
+   - 质量数据录入
+   - 历史数据查询
+
+2. **控制图分析**
+   - 实时控制图绘制
+   - 异常检测与报警
+   - 控制限计算
+
+3. **异常报警**
+   - 邮件通知
+   - 异常类型识别
+
+4. **报表生成**
+   - 质量报告导出
+   - 趋势分析
+
+## 安装与运行
+
+### 后端安装
+
+```bash
+# 进入后端目录
+cd back_end
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 运行后端服务
+python app.py
+```
+
+### 前端安装
+
+```bash
+# 进入前端目录
+cd front_end
+
+# 安装依赖
+npm install
+
+# 运行前端服务
+npm run dev
+```
+
+## 配置说明
+
+### 后端配置
+
+- `app.py` - 主应用配置
+- `functions/` - 业务逻辑函数
+- `static/` - 静态文件目录
+- `images/` - 图片存储目录
+
+### 前端配置
+
+- `config/` - Vue 配置文件
+- `src/` - 源代码目录
+- `src/components/` - Vue 组件
+- `src/views/` - 页面视图
+
+## 控制图异常检测规则
+
+1. 点超出 3σ 控制线
+2. 连续 7 点在中心线同侧
+3. 连续 6 点递增或递减
+4. 连续 14 点相邻点上下交替
+5. 连续 3 点中有 2 点在 2σ 控制线外
+6. 连续 5 点中有 4 点在 1σ 控制线外
+7. 连续 15 点在 1σ 控制线内
+8. 连续 8 点在中心线两侧且无 1 点在 1σ 控制线内
+
+## 邮件报警配置
+
+在 `back_end/app.py` 中配置邮件服务器信息：
+
+```python
+mail_server = 'smtp.qq.com'
+mail_port = 465
+mail_username = 'your_email@qq.com'
+mail_password = 'your_email_password'
+mail_default_sender = 'your_email@qq.com'
+```
+
+## 开发与部署
+
+### 开发环境
+
+- Python 3.8+
+- Node.js 18+
+- npm 8+
+
+### 生产部署
+
+1. 构建前端项目
+   ```bash
+   cd front_end
+   npm run build
+   ```
+
+2. 部署后端服务（可使用 Gunicorn、uWSGI 等）
+   ```bash
+   gunicorn -w 4 -b 0.0.0.0:5000 app:app
+   ```
+
+## 许可证
+
+MIT License
+
+## 联系方式
+
+如有问题或建议，请联系项目维护者。

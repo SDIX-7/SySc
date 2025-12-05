@@ -1,0 +1,29 @@
+/todo.md
+/可行性报告.md
+/控制图.md
+/数据字典.md
+/系统分析报告.md
+
+# 忽略图片文件夹中的内容
+back_end/dataset_split/train/images/*
+back_end/dataset_split/val/images/*
+back_end/images/*
+
+# 忽略YOLO模型文件
+back_end/yolo11n.pt
+
+# 忽略Node.js相关文件
+front_end/node_modules/
+front_end/dist/
+front_end/npm-debug.log*
+front_end/yarn-debug.log*
+front_end/yarn-error.log*
+front_end/node-v18.20.4-x64.msi
+front_end/nvm-setup.exe
+
+# 但保留空文件夹结构
+!back_end/dataset_split/train/images/.gitkeep
+!back_end/dataset_split/val/images/.gitkeep
+!back_end/images/.gitkeep
+!front_end/node_modules/.gitkeep
+!front_end/dist/.gitkeep
