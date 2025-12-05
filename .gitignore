@@ -27,3 +27,10 @@ front_end/nvm-setup.exe
 !back_end/images/.gitkeep
 !front_end/node_modules/.gitkeep
 !front_end/dist/.gitkeep
+
+# 忽略FILES文件夹及内容
+FILES/
+
+# 忽略除readme.md外的所有markdown文件
+*.md
+!readme.md
