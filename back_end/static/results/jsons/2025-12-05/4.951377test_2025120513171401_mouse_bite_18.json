@@ -1,0 +1,1 @@
+{"name": "test_2025120513171401_mouse_bite_18", "hasDefects": true, "captureTime": "2025-12-05 13:17:14.951377", "detection_total_cnts": 1, "detection_classes": ["Mouse_bite"], "detection_boxes": [[388.8549499511719, 1393.722900390625, 429.98370361328125, 1424.5889892578125]], "detection_scores": [0.7953128814697266]}
