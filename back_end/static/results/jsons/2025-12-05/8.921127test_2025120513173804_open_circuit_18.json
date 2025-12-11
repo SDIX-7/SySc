@@ -1,1 +1,0 @@
-{"name": "test_2025120513173804_open_circuit_18", "hasDefects": true, "captureTime": "2025-12-05 13:17:38.921127", "detection_total_cnts": 1, "detection_classes": ["Open_circuit"], "detection_boxes": [[493.3898010253906, 502.8916320800781, 558.9013671875, 561.0504760742188]], "detection_scores": [0.7917759418487549]}
