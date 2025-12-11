@@ -12,7 +12,6 @@
 │   ├── functions/      # 功能模块
 │   └── static/         # 静态文件
 ├── front_end/     # Vue 前端
-├── email_test.py  # 邮件测试脚本
 ├── LICENSE
 └── README.md
 ```
