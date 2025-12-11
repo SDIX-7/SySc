@@ -4,18 +4,7 @@
 
 本项目是一个基于Flask框架开发的PCB缺陷检测系统后端，提供图片检测、数据管理和控制图生成等功能。系统可以接收前端上传的PCB图片，使用深度学习模型进行缺陷检测，并将检测结果存储到数据库中。同时，系统还支持生成U图控制图，用于监控PCB生产质量。
 
-## 环境要求
-
-- Python 3.6+
-- Flask 2.x
-- SQLAlchemy
-- Marshmallow
-- Flask-CORS
-- Flask-SocketIO
-- OpenCV（用于图像处理）
-- 深度学习框架（根据实际模型选择，如PyTorch、TensorFlow等）
-
-## 安装和运行
+## Quick Start
 
 ### 1. 安装依赖
 
@@ -146,4 +135,4 @@ back_end/
 
 ## 许可证
 
-MIT License
+GNU GPL v3 License

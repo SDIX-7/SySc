@@ -232,6 +232,7 @@ export default {
       deviceId: '', // 选中设备id
       deviceLabel: '', // 选中设备名字
       videoContain: null, // 摄像头视图容器
+      videoStream: null, // 摄像头数据流
       mirror: false, // 摄像头镜像
       onCamara: false, // 是否打开摄像头
       detectFrame: '' // 跟踪完成的帧
@@ -369,16 +370,31 @@ export default {
         this.onCamara = true
         const constraints = {
           video: {
-            deviceId: this.deviceId ? this.deviceId : undefined,
+            deviceId: this.deviceId ? { exact: this.deviceId } : undefined,
             width: {min: 640, ideal: 1280, max: 1920},
             height: {min: 480, ideal: 720, max: 1080}
-            // width: 256,
-            // height: 144
-          }
+          },
+          audio: false
         }
         navigator.mediaDevices.getUserMedia(constraints).then(stream => {
           this.videoContain.srcObject = stream
           this.videoStream = stream
+        }).catch(error => {
+          this.onCamara = false
+          console.error('获取摄像头失败:', error)
+          this.$message.error('获取摄像头失败: ' + error.message)
+          // 常见错误处理
+          if (error.name === 'NotAllowedError') {
+            this.$message.error('摄像头访问被拒绝，请检查浏览器权限设置')
+          } else if (error.name === 'NotFoundError') {
+            this.$message.error('未检测到可用摄像头')
+          } else if (error.name === 'NotReadableError') {
+            this.$message.error('摄像头被其他应用占用')
+          } else if (error.name === 'OverconstrainedError') {
+            this.$message.error('摄像头参数设置不合理')
+          } else {
+            this.$message.error('获取摄像头失败，请重试')
+          }
         })
       })
     },
@@ -407,9 +423,11 @@ export default {
     },
     // 关闭摄像头
     stopCamara () {
-      this.videoStream.getTracks()[0].stop()
-      this.videoStream = null
-      this.videoContain.srcObject = null
+      if (this.videoStream) {
+        this.videoStream.getTracks().forEach(track => track.stop())
+        this.videoStream = null
+        this.videoContain.srcObject = null
+      }
       this.onCamara = false
     },
     // 使用照片
@@ -418,9 +436,11 @@ export default {
       this.detectFrame = ''
       this.imgCapDialogVisible = false
       this.isUpload = true
-      this.videoStream.getTracks()[0].stop()
-      this.videoStream = null
-      this.videoContain.srcObject = null
+      if (this.videoStream) {
+        this.videoStream.getTracks().forEach(track => track.stop())
+        this.videoStream = null
+        this.videoContain.srcObject = null
+      }
       this.onCamara = false
     },
     // 获取设备列表

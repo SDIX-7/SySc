@@ -2,6 +2,8 @@
 
 一个基于 Flask + Vue 的PCB缺陷检测与质量信息系统，包含图片缺陷检测、控制图分析、异常报警等功能。
 
+本项目基于 [YOLOv8-model-improvement](https://github.com/Zwc2003/YOLOv8-model-improvement) 项目进行二次开发。
+
 ## 项目结构
 
 ```
@@ -50,6 +52,19 @@
 4. **异常报警**
    - 邮件通知
    - 异常类型识别
+
+## 界面展示
+
+界面图片位于项目根目录的 `fig/` 文件夹中，展示了系统的主要功能界面：
+
+### 主要功能界面
+
+![界面1](fig/22.png)
+![界面2](fig/28.png)
+![界面3](fig/33.png)
+![界面4](fig/37.png)
+![界面5](fig/46.png)
+![界面6](fig/59.png)
 
 ## 安装与运行
 
@@ -108,15 +123,17 @@ npm run dev
 
 ## 邮件报警配置
 
-在 `back_end/app.py` 中配置邮件服务器信息：
+在 `back_end/functions/email_utils1.py` 中配置邮件服务器信息：
 
 ```python
-mail_server = 'smtp.qq.com'
-mail_port = 465
-mail_username = 'your_email@qq.com'
-mail_password = 'your_email_password'
-mail_default_sender = 'your_email@qq.com'
+# 修改以下邮件配置信息
+smtp_server = 'smtp.qq.com'
+smtp_port = 465
+sender_email = 'your_email@qq.com'
+password = 'your_email_password'  # 替换为真实授权码
 ```
+
+**注意：** 修改好后请将文件名改为 `email_utils.py`
 
 ## 开发与部署
 
@@ -141,7 +158,7 @@ mail_default_sender = 'your_email@qq.com'
 
 ## 许可证
 
-MIT License
+GNU GPL v3 License
 
 ## 联系方式
 

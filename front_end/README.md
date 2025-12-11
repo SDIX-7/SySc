@@ -78,4 +78,4 @@ cp -r dist ../back_end/front_end/
 
 ## 许可证
 
-MIT License
+GNU GPL v3 License

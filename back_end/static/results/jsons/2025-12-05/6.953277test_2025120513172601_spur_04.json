@@ -1,0 +1,1 @@
+{"name": "test_2025120513172601_spur_04", "hasDefects": true, "captureTime": "2025-12-05 13:17:26.953277", "detection_total_cnts": 1, "detection_classes": ["Spur"], "detection_boxes": [[2155.7275390625, 1150.9632568359375, 2195.81396484375, 1188.5621337890625]], "detection_scores": [0.7700523138046265]}

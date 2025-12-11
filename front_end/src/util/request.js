@@ -54,8 +54,8 @@ request.interceptors.request.use(
     config.cancelToken = new axios.CancelToken(c => {
       cancel = c
     })
-    // 阻止重复请求。当上个请求未完成时，相同的请求不会进行
-    stopRepeatRequest(config.url, cancel, '请求过于频繁，请稍后再试')
+    // 移除重复请求拦截逻辑，因为它会阻止正常的刷新按钮点击
+    // stopRepeatRequest(config.url, cancel, '请求过于频繁，请稍后再试')
     store.dispatch('setCancelAxios', cancel)
     store.dispatch('setReqUrl', config.url)
     return config
