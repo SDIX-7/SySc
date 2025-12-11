@@ -20,16 +20,17 @@
 ## 技术栈
 
 ### 后端 (back_end/)
-- Flask - Python Web 框架
-- OpenCV - 图像处理
+- Flask 2.x - Python Web 框架
+- OpenCV 4.x - 图像处理
 - SQLAlchemy - 数据库管理
-- Marshmallow - 数据序列化
-- 深度学习框架 - 缺陷检测
+- YOLOv8 - 缺陷检测模型
+- SQLite - 轻量级数据库
 
 ### 前端 (front_end/)
-- Vue.js - JavaScript 框架
-- Vuex - 状态管理
-- Vue Router - 路由管理
+- Vue 2.x - JavaScript 框架
+- Vuex 3.x - 状态管理
+- Vue Router 3.x - 路由管理
+- Element UI - UI 组件库
 
 ## 功能特性
 
@@ -55,20 +56,38 @@
 
 ## 界面展示
 
-界面图片位于项目根目录的 `fig/` 文件夹中，展示了系统的主要功能界面：
+系统包含以下主要界面：
 
-### 主要功能界面
+1. **首页** - 系统概览和功能入口
+2. **图片检测** - 上传PCB图片进行缺陷检测
+3. **检测结果** - 展示检测结果和缺陷信息
+4. **历史记录** - 查询和管理历史检测记录
+5. **控制图分析** - 生成和展示U图控制图
+6. **报警设置** - 配置邮件报警参数
 
-![界面1](fig/22.png)
-![界面2](fig/28.png)
-![界面3](fig/33.png)
-![界面4](fig/37.png)
-![界面5](fig/46.png)
-![界面6](fig/59.png)
+以下是系统界面截图：
+管理员
+![界面1](fig/412.png)
+![界面2](fig/420.png)
+![界面3](fig/423.png)
+![界面4](fig/426.png)
+![界面5](fig/429.png)
+![界面6](fig/435.png)
+![界面7](fig/438.png)
+检验员界面
+![界面8](fig/518.png)
+监测员界面
+![界面9](fig/554.png)
 
 ## 安装与运行
 
-### 后端安装
+### 系统要求
+
+- Python 3.8+
+- Node.js 18+
+- npm 8+
+
+### 后端安装与运行
 
 ```bash
 # 进入后端目录
@@ -81,7 +100,9 @@ pip install -r requirements.txt
 python app.py
 ```
 
-### 前端安装
+后端服务将在 `http://localhost:5000` 上运行。
+
+### 前端安装与运行
 
 ```bash
 # 进入前端目录
@@ -90,25 +111,31 @@ cd front_end
 # 安装依赖
 npm install
 
-# 运行前端服务
+# 运行前端开发服务
 npm run dev
 ```
+
+前端服务将在 `http://localhost:8080` 上运行。
 
 ## 配置说明
 
 ### 后端配置
 
-- `app.py` - 主应用配置
-- `functions/` - 业务逻辑函数
-- `static/` - 静态文件目录
-- `images/` - 图片存储目录
+- `app.py` - 主应用文件，包含 API 路由和数据库配置
+- `functions/detect_img.py` - 图片检测函数，使用 YOLOv8 模型
+- `functions/control_chart.py` - 控制图生成函数，实现 U 图分析
+- `functions/email_utils.py` - 邮件发送工具，用于异常报警
+- `static/` - 静态文件目录，存放检测结果
+- `images/` - 临时图片存储目录
 
 ### 前端配置
 
-- `config/` - Vue 配置文件
-- `src/` - 源代码目录
-- `src/components/` - Vue 组件
-- `src/views/` - 页面视图
+- `config/index.js` - Vue 项目配置，包含代理设置
+- `src/main.js` - 应用入口文件
+- `src/components/` - Vue 组件，封装公共功能
+- `src/views/` - 页面视图，实现不同功能模块
+- `src/store/` - Vuex 状态管理
+- `src/router/` - Vue Router 路由配置
 
 ## 控制图异常检测规则
 

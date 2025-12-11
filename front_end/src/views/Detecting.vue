@@ -44,6 +44,30 @@
           <p>过程能力评估</p>
         </div>
       </el-button>
+      <el-button class="button4" type="info" circle @click="EmailSettings">
+        <div class="btn-icon">
+          <i class="el-icon-message"></i>
+        </div>
+        <div class="btn-title">
+          <span>邮箱设置</span>
+        </div>
+        <div class="btn-content">
+          <p>设置控制图报警邮箱</p>
+          <p>接收异常检测报警通知</p>
+        </div>
+      </el-button>
+      <el-button class="button5" type="info" circle @click="UserManagement">
+        <div class="btn-icon">
+          <i class="el-icon-user"></i>
+        </div>
+        <div class="btn-title">
+          <span>人员管理</span>
+        </div>
+        <div class="btn-content">
+          <p>管理系统用户</p>
+          <p>添加或删除用户</p>
+        </div>
+      </el-button>
     </div>
   </div>
 </template>
@@ -73,6 +97,16 @@ export default {
     ProcessControl () {
       this.$router.push({path: '/ProcessControl'})
       console.log('过程控制')
+    },
+    // 邮箱设置
+    EmailSettings () {
+      this.$router.push({path: '/EmailSettings'})
+      console.log('邮箱设置')
+    },
+    // 人员管理
+    UserManagement () {
+      this.$router.push({path: '/UserManagement'})
+      console.log('人员管理')
     }
   }
 }
@@ -143,6 +177,14 @@ export default {
 
 .button3{
   background: url("../assets/but3.jpg");
+  background-size: 288px 592px;
+}
+.button4{
+  background: url("../assets/but1.jpg");
+  background-size: 288px 592px;
+}
+.button5{
+  background: url("../assets/but2.jpg");
   background-size: 288px 592px;
 }
 .content button:hover {

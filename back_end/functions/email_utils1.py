@@ -40,7 +40,7 @@ def send_email(subject, body, to_email='xxxxxxxxxx@qq.com'):
             print('❌ 邮件发送错误:', e)
             return False
 
-def send_control_chart_alert(abnormal_data):
+def send_control_chart_alert(abnormal_data, recipient_email='xxxxxxxxx@qq.com'):
     """
     发送控制图异常报警邮件
     
@@ -56,6 +56,7 @@ def send_control_chart_alert(abnormal_data):
             'ucl_list': [上控制限列表],
             'lcl_list': [下控制限列表]
         }
+        recipient_email: 收件人邮箱地址
     
     Returns:
         bool: 邮件发送是否成功
@@ -93,4 +94,4 @@ def send_control_chart_alert(abnormal_data):
     body += '\n请及时检查生产过程！'
     
     # 发送邮件
-    return send_email(subject, body)
+    return send_email(subject, body, recipient_email)

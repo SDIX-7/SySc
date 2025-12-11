@@ -11,6 +11,7 @@ back_end/images/*
 
 # 忽略YOLO模型文件
 back_end/yolo11n.pt
+email_test.py
 
 # 忽略Node.js相关文件
 front_end/node_modules/

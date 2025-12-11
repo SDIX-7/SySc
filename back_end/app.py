@@ -61,6 +61,16 @@ class Image(db.Model):
         except:
             return []
 
+# 邮箱设置模型
+class EmailSettings(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(100), nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    def __init__(self, email):
+        self.email = email
+        self.updated_at = datetime.now()
+
 # 定义Schema
 class ImageSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -73,6 +83,12 @@ images_schema = ImageSchema(many=True)
 # 创建数据库表
 with app.app_context():
     db.create_all()
+    
+    # 初始化邮箱设置
+    if not EmailSettings.query.first():
+        default_email = EmailSettings(email='2395365918@qq.com')
+        db.session.add(default_email)
+        db.session.commit()
 
 # 跨域设置
 CORS(app, supports_credentials=True, resources={r'/*': {'origins': '*'}})
@@ -195,6 +211,69 @@ def save_detection_result():
     except ValueError:
         return jsonify({"error": "Invalid datetime format"}), 400
 
+@app.route('/email-settings', methods=['GET'])
+def get_email_settings():
+    """
+    获取当前邮箱设置
+    """
+    try:
+        # 尝试从数据库获取邮箱设置
+        email_setting = EmailSettings.query.first()
+        
+        if email_setting:
+            return jsonify({
+                "email": email_setting.email,
+                "updated_at": email_setting.updated_at.isoformat()
+            }), 200
+        else:
+            # 如果没有记录，返回默认邮箱
+            return jsonify({
+                "email": "2395365918@qq.com",
+                "updated_at": datetime.now().isoformat()
+            }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/email-settings', methods=['PUT'])
+def update_email_settings():
+    """
+    更新邮箱设置
+    """
+    try:
+        data = request.json
+        email = data.get('email')
+        
+        if not email:
+            return jsonify({"error": "Missing email field"}), 400
+        
+        # 验证邮箱格式
+        import re
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_pattern, email):
+            return jsonify({"error": "Invalid email format"}), 400
+        
+        # 检查数据库中是否已有记录
+        email_setting = EmailSettings.query.first()
+        
+        if email_setting:
+            # 更新现有记录
+            email_setting.email = email
+        else:
+            # 创建新记录
+            email_setting = EmailSettings(email)
+            db.session.add(email_setting)
+        
+        db.session.commit()
+        
+        return jsonify({
+            "email": email_setting.email,
+            "updated_at": email_setting.updated_at.isoformat(),
+            "message": "Email settings updated successfully"
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
 # 添加静态文件服务
 @app.route('/')
 def index():
@@ -286,8 +365,13 @@ def get_control_chart_data():
                 'ucl_list': chart_data['ucl_list'],
                 'lcl_list': chart_data['lcl_list']
             }
+            
+            # 从数据库获取收件人邮箱
+            email_setting = EmailSettings.query.first()
+            recipient_email = email_setting.email if email_setting else '2395365918@qq.com'
+            
             # 发送异常报警邮件
-            send_control_chart_alert(abnormal_data)
+            send_control_chart_alert(abnormal_data, recipient_email)
             # 更新上一次处理的最大id
             last_processed_max_id = current_max_id
         
