@@ -7,6 +7,7 @@
 # 忽略图片文件夹中的内容
 back_end/dataset_split/*
 back_end/images/*
+!back_end/static/.gitkeep
 
 # 忽略YOLO模型文件
 back_end/yolo11n.pt
