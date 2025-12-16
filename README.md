@@ -50,7 +50,7 @@
    - 异常自动报警
 
 4. **异常报警**
-   - 邮件通知
+   - 邮件通知（AI分析）
    - 异常类型识别
 
 ## 界面展示
@@ -94,6 +94,10 @@ cd back_end
 
 # 安装依赖
 pip install -r requirements.txt
+
+# 创建.env文件并配置环境变量
+# 在.env文件中添加以下内容：
+# DEEPSEEK_API_KEY=xxxxxxx
 
 # 运行后端服务
 python app.py
@@ -166,7 +170,7 @@ password = 'your_email_password'  # 替换为真实授权码
 ### 开发环境
 
 - Python 3.8+
-- Node.js 18+
+- Node.js 18
 - npm 8+
 
 ### 生产部署

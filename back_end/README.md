@@ -16,11 +16,21 @@ cd back_end
 pip install -r requirements.txt
 ```
 
-### 2. 初始化数据库
+### 2. 配置环境变量
+
+创建.env文件并配置DEEPSEEK_API_KEY：
+
+```bash
+# 在back_end目录下创建.env文件
+# 在.env文件中添加以下内容：
+# DEEPSEEK_API_KEY=xxxxxxx
+```
+
+### 3. 初始化数据库
 
 系统使用SQLite数据库，首次运行时会自动创建数据库文件。
 
-### 3. 运行应用
+### 4. 运行应用
 
 ```bash
 # 启动Flask应用
