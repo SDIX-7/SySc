@@ -159,3 +159,8 @@ weights/
 /ultralytics/assets/
 
 email_utils.py
+
+# DeepSeek API key
+.env
+.env.local
+*.env

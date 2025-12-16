@@ -19,6 +19,8 @@ ma = Marshmallow(app)
 
 # 全局变量：跟踪上一次处理的最大图片id，用于防止重复发送邮件
 last_processed_max_id = 0
+# 全局变量：跟踪上次发送报警邮件的时间，用于30分钟内不重复报警
+last_alert_time = None
 
 # 定义数据库模型
 class Image(db.Model):
@@ -352,18 +354,33 @@ def get_control_chart_data():
         chart_data['message'] = '控制图数据包含所有8个异常规则检测结果'
         
         # 检查是否有异常点，且数据库中最大id发生变化，才发送报警邮件
-        global last_processed_max_id
+        global last_processed_max_id, last_alert_time
+        from datetime import datetime, timedelta
+        
+        # 检查是否需要发送邮件
+        should_send_email = False
         if chart_data['abnormal_points'] and current_max_id != last_processed_max_id:
-            # 准备异常数据
+            # 检查是否在30分钟内发送过邮件
+            if last_alert_time is None:
+                should_send_email = True
+            else:
+                time_diff = datetime.now() - last_alert_time
+                if time_diff > timedelta(minutes=30):
+                    should_send_email = True
+        
+        if should_send_email:
+            # 准备异常数据，包含所有控制图信息
             abnormal_data = {
                 'abnormal_points': chart_data['abnormal_points'],
+                'abnormal_rules': chart_data['abnormal_rules'],  # 新增：违反的异常规则
                 'sample_defects_details': chart_data['sample_defects_details'],
                 'u_list': chart_data['u_list'],
                 'c_list': chart_data['c_list'],
                 'n_list': chart_data['n_list'],
                 'center_line': chart_data['center_line'],
                 'ucl_list': chart_data['ucl_list'],
-                'lcl_list': chart_data['lcl_list']
+                'lcl_list': chart_data['lcl_list'],
+                'statistics': chart_data['statistics']  # 新增：统计信息
             }
             
             # 从数据库获取收件人邮箱
@@ -374,6 +391,8 @@ def get_control_chart_data():
             send_control_chart_alert(abnormal_data, recipient_email)
             # 更新上一次处理的最大id
             last_processed_max_id = current_max_id
+            # 更新上次发送报警邮件的时间
+            last_alert_time = datetime.now()
         
         return jsonify(chart_data)
         
