@@ -1,560 +1,585 @@
 <template>
-  <div class="container">
-    <Menu></Menu>
-    <div class="content">
-      <h1>过程控制</h1>
-      <div class="chart-container">
+  <div class="page-container">
+    <Menu />
+    
+    <div class="page-content">
+      <div class="page-header">
+        <div class="header-left">
+          <h1 class="page-title">过程控制</h1>
+          <p class="page-subtitle">实时U图监控和异常模式检测</p>
+        </div>
+        <div class="header-right">
+          <button class="btn-secondary" @click="loadChartData">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 4v6h-6"/>
+              <path d="M1 20v-6h6"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            刷新
+          </button>
+          <div class="auto-refresh" :class="{ active: autoRefresh }" @click="toggleAutoRefresh">
+            <span class="refresh-dot"></span>
+            <span>{{ autoRefresh ? '自动刷新' : '已暂停' }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-value">{{ statistics.totalSamples }}</div>
+          <div class="stat-label">样本总数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ statistics.meanU.toFixed(4) }}</div>
+          <div class="stat-label">平均U值</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ statistics.ucl.toFixed(4) }}</div>
+          <div class="stat-label">控制上限</div>
+        </div>
+        <div class="stat-card" :class="{ danger: statistics.totalAbnormal > 0 }">
+          <div class="stat-value">{{ statistics.totalAbnormal }}</div>
+          <div class="stat-label">异常点数</div>
+        </div>
+      </div>
+      
+      <div class="chart-section">
         <div class="chart-header">
-          <div class="chart-title">
-            <h3>U图控制图 - 单位缺陷数控制</h3>
-            <div class="update-info" v-if="lastUpdateTime">
-              最后更新: {{ formatUpdateTime(lastUpdateTime) }}
+          <h3 class="chart-title">U图控制图</h3>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <span class="legend-dot normal"></span>
+              <span>正常</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-dot abnormal"></span>
+              <span>异常</span>
             </div>
           </div>
-          <div class="chart-actions">
-            <el-button type="primary" @click="loadChartData" size="small">
-              <i class="el-icon-refresh"></i> 刷新数据
-            </el-button>
-            <el-button @click="toggleAutoRefresh" size="small" :type="autoRefreshEnabled ? 'success' : 'info'">
-              <i :class="autoRefreshEnabled ? 'el-icon-video-play' : 'el-icon-video-pause'"></i>
-              {{ autoRefreshEnabled ? '自动刷新(30s)' : '暂停刷新' }}
-            </el-button>
-          </div>
         </div>
-        <div id="controlChart" class="chart"></div>
-        <div class="chart-legend">
-          <div class="legend-item">
-            <span class="legend-dot normal"></span>
-            <span>正常点 (蓝色)</span>
+        <div ref="chartRef" class="chart-container"></div>
+      </div>
+      
+      <div class="rules-section">
+        <h3 class="section-title">异常规则检测</h3>
+        <div class="rules-grid">
+          <div 
+            v-for="rule in ruleResults" 
+            :key="rule.rule" 
+            class="rule-card"
+            :class="{ danger: rule.abnormalCount > 0, success: rule.abnormalCount === 0 }"
+          >
+            <div class="rule-header">
+              <span class="rule-number">{{ rule.rule }}</span>
+              <span class="rule-status" :class="rule.abnormalCount > 0 ? 'danger' : 'success'">
+                {{ rule.abnormalCount > 0 ? '!' : '✓' }}
+              </span>
+            </div>
+            <p class="rule-description">{{ rule.description }}</p>
+            <div class="rule-count">
+              <span class="count-value">{{ rule.abnormalCount }}</span>
+              <span class="count-label">次违规</span>
+            </div>
           </div>
-          <div class="legend-item">
-            <span class="legend-dot abnormal"></span>
-            <span>异常点 (红色)</span>
-          </div>
-        </div>
-        <div>end-placeholder</div>
-        <div class="stat-info">
-          <el-row :gutter="20">
-            <el-col :span="6">
-              <div class="stat-card">
-                <div class="stat-label">样本总数</div>
-                <div class="stat-value">{{ statistics.totalSamples || 0 }}</div>
-              </div>
-            </el-col>
-            <el-col :span="6">
-              <div class="stat-card">
-                <div class="stat-label">平均u值</div>
-                <div class="stat-value">{{ statistics.meanU.toFixed(4) || 0 }}</div>
-              </div>
-            </el-col>
-            <el-col :span="6">
-              <div class="stat-card">
-                <div class="stat-label">控制上限(UCL)</div>
-                <div class="stat-value">{{ statistics.ucl.toFixed(4) || 0 }}</div>
-              </div>
-            </el-col>
-            <el-col :span="6">
-              <div class="stat-card">
-                <div class="stat-label">异常点数量</div>
-                <div class="stat-value" :class="{ 'abnormal-count': statistics.totalAbnormal > 0 }">
-                  {{ statistics.totalAbnormal || 0 }}
-                </div>
-              </div>
-            </el-col>
-          </el-row>
-        </div>
-        <div class="rules-container">
-          <h4>异常规则检测结果</h4>
-          <el-table :data="ruleResults" style="width: 100%">
-            <el-table-column prop="rule" label="规则" width="80"></el-table-column>
-            <el-table-column prop="description" label="描述"></el-table-column>
-            <el-table-column prop="abnormalCount" label="异常点数" width="100"></el-table-column>
-            <el-table-column prop="status" label="状态" width="80">
-              <template slot-scope="scope">
-                <el-tag :type="scope.row.abnormalCount > 0 ? 'danger' : 'success'" size="small">
-                  {{ scope.row.abnormalCount > 0 ? '异常' : '正常' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-import Menu from '@/components/Menu.vue'
+<script setup lang="ts">
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
-import { getControlChartData } from '@/api/api.js'
+import Menu from '@/components/Menu.vue'
+import { getControlChartData } from '@/api'
+import type { ControlChartData } from '@/types'
 
-export default {
-  name: 'ProcessControl',
-  components: {
-    Menu
-  },
-  data () {
-    return {
-      chart: null,
-      chartData: null,
-      statistics: {
-        totalSamples: 0,
-        totalDefects: 0,
-        meanU: 0,
-        ucl: 0,
-        totalAbnormal: 0
-      },
-      ruleResults: [
-        { rule: '规则1', description: '1个点落在A区以外', abnormalCount: 0, status: 'normal' },
-        { rule: '规则2', description: '9个点在中心线一侧', abnormalCount: 0, status: 'normal' },
-        { rule: '规则3', description: '6点连续递增或递减', abnormalCount: 0, status: 'normal' },
-        { rule: '规则4', description: '14点上下交替', abnormalCount: 0, status: 'normal' },
-        { rule: '规则5', description: '2/3点落在A区', abnormalCount: 0, status: 'normal' },
-        { rule: '规则6', description: '4/5点落在C区以外', abnormalCount: 0, status: 'normal' },
-        { rule: '规则7', description: '15点连续在C区以内', abnormalCount: 0, status: 'normal' },
-        { rule: '规则8', description: '8点落在中心线两侧但无C区点', abnormalCount: 0, status: 'normal' }
-      ],
-      refreshTimer: null,
-      autoRefreshEnabled: true,
-      refreshInterval: 30000, // 默认30秒刷新一次
-      lastUpdateTime: null
-    }
-  },
-  mounted () {
-    this.initChart()
-    this.loadChartData()
-    this.startAutoRefresh()
-    // 监听页面可见性变化，当页面重新可见时刷新数据
-    document.addEventListener('visibilitychange', this.handleVisibilityChange)
-    // 监听窗口聚焦事件
-    window.addEventListener('focus', this.handleWindowFocus)
-  },
-  beforeDestroy () {
-    if (this.chart) {
-      this.chart.dispose()
-    }
-    this.stopAutoRefresh()
-    document.removeEventListener('visibilitychange', this.handleVisibilityChange)
-    window.removeEventListener('focus', this.handleWindowFocus)
-  },
-  activated () {
-    // 当组件从缓存中激活时刷新数据
-    this.loadChartData()
-    this.startAutoRefresh()
-  },
-  deactivated () {
-    // 当组件被缓存时停止自动刷新
-    this.stopAutoRefresh()
-  },
-  methods: {
-    formatUpdateTime (date) {
-      const now = new Date(date)
-      const hours = now.getHours().toString().padStart(2, '0')
-      const minutes = now.getMinutes().toString().padStart(2, '0')
-      const seconds = now.getSeconds().toString().padStart(2, '0')
-      return `${hours}:${minutes}:${seconds}`
-    },
-    initChart () {
-      this.chart = echarts.init(document.getElementById('controlChart'))
-    },
-    loadChartData () {
-      getControlChartData().then(response => {
-        this.chartData = response.data
-        this.lastUpdateTime = new Date()
-        this.updateStatistics()
-        this.updateRuleResults()
-        this.renderChart()
-      }).catch(error => {
-        console.error('Failed to load control chart data:', error)
-      })
-    },
-    updateStatistics () {
-      const { u_list: uValues, abnormal_rules: abnormalRules } = this.chartData
-      this.statistics.totalSamples = uValues.length
-      this.statistics.meanU = this.chartData.center_line
-      this.statistics.ucl = this.chartData.approx_ucl
+const chartRef = ref<HTMLElement>()
+let chart: echarts.ECharts | null = null
 
-      // 计算abnormal_rules中所有异常点的并集（避免重复计数）
-      const uniqueAbnormalPoints = new Set()
-      if (abnormalRules) {
-        for (const sampleIndices of Object.values(abnormalRules)) {
-          if (sampleIndices && sampleIndices.length > 0) {
-            // 添加到Set中会自动去重
-            sampleIndices.forEach(index => uniqueAbnormalPoints.add(index))
-          }
-        }
-      }
+const chartData = ref<ControlChartData | null>(null)
+const statistics = reactive({
+  totalSamples: 0,
+  totalDefects: 0,
+  meanU: 0,
+  ucl: 0,
+  totalAbnormal: 0
+})
 
-      // 确保异常点总数不超过样本总数
-      const totalAbnormalCount = Math.min(uniqueAbnormalPoints.size, uValues.length)
-      this.statistics.totalAbnormal = totalAbnormalCount
-    },
-    updateRuleResults () {
-      const { abnormal_rules: abnormalRules } = this.chartData
-      // 确保ruleResults有初始的8个规则配置
-      const ruleDescriptions = [
-        '1个点落在A区以外',
-        '9个点在中心线一侧',
-        '6点连续递增或递减',
-        '14点上下交替',
-        '2/3点落在A区',
-        '4/5点落在C区以外',
-        '15点连续在C区以内',
-        '8点落在中心线两侧但无C区点'
-      ]
+const ruleResults = ref([
+  { rule: '规则1', description: '点超出3σ控制界限', abnormalCount: 0 },
+  { rule: '规则2', description: '连续9点在中心线同侧', abnormalCount: 0 },
+  { rule: '规则3', description: '连续6点递增或递减', abnormalCount: 0 },
+  { rule: '规则4', description: '连续14点上下交替', abnormalCount: 0 },
+  { rule: '规则5', description: '连续3点中有2点在2σ区外', abnormalCount: 0 },
+  { rule: '规则6', description: '连续5点中有4点在1σ区外', abnormalCount: 0 },
+  { rule: '规则7', description: '连续15点在1σ区内', abnormalCount: 0 },
+  { rule: '规则8', description: '连续8点无1点在1σ区内', abnormalCount: 0 }
+])
 
-      this.ruleResults = ruleDescriptions.map((desc, index) => {
-        const ruleNum = index + 1
-        const sampleIndices = abnormalRules && abnormalRules[ruleNum] ? abnormalRules[ruleNum] : []
-        return {
-          rule: `规则${ruleNum}`,
-          description: desc,
-          abnormalCount: sampleIndices ? sampleIndices.length : 0,
-          status: sampleIndices && sampleIndices.length > 0 ? 'abnormal' : 'normal'
-        }
-      })
-    },
-    renderChart () {
-      if (!this.chart || !this.chartData) return
-      const { u_list: uValues, approx_ucl: upperControlLimit, center_line: meanU, abnormal_points: allAbnormalIndices } = this.chartData
-      const sampleLabels = Array.from({ length: uValues.length }, (_, i) => `样本 ${i + 1}`)
-      const uData = uValues.map((value, index) => ({
-        value: value,
-        itemStyle: {
-          color: allAbnormalIndices.includes(index) ? '#ff4d4f' : '#1890ff'
-        }
-      }))
-      const option = {
-        tooltip: {
-          trigger: 'axis',
-          formatter: function (params) {
-            let result = params[0].name + '<br/>'
-            params.forEach(param => {
-              result += `${param.marker}${param.seriesName}: ${param.value}<br/>`
-            })
-            return result
-          }
-        },
-        legend: {
-          data: ['u值', '中心线', '控制上限', '控制下限']
-        },
-        grid: {
-          left: '3%',
-          right: '4%',
-          bottom: '10%',
-          containLabel: true
-        },
-        xAxis: {
-          type: 'category',
-          boundaryGap: false,
-          data: sampleLabels
-        },
-        yAxis: {
-          type: 'value',
-          name: '缺陷数'
-        },
-        series: [
-          {
-            name: 'u值',
-            type: 'line',
-            data: uData,
-            symbol: 'circle',
-            symbolSize: 8,
-            emphasis: {
-              focus: 'series'
-            }
-          },
-          {
-            name: '中心线',
-            type: 'line',
-            data: Array(uValues.length).fill(meanU),
-            lineStyle: {
-              color: '#52c41a',
-              type: 'dashed'
-            },
-            symbol: 'none'
-          },
-          {
-            name: '控制上限',
-            type: 'line',
-            data: Array(uValues.length).fill(upperControlLimit),
-            lineStyle: {
-              color: '#ff4d4f',
-              type: 'dashed'
-            },
-            symbol: 'none'
-          },
-          {
-            name: '控制下限',
-            type: 'line',
-            data: Array(uValues.length).fill(0),
-            lineStyle: {
-              color: '#ff4d4f',
-              type: 'dashed'
-            },
-            symbol: 'none'
-          }
-        ]
-      }
+const autoRefresh = ref(true)
+let refreshTimer: ReturnType<typeof setInterval> | null = null
 
-      this.chart.setOption(option)
-    },
-    startAutoRefresh () {
-      if (this.autoRefreshEnabled) {
-        this.stopAutoRefresh() // 先停止现有的定时器
-        this.refreshTimer = setInterval(() => {
-          this.loadChartData()
-        }, this.refreshInterval)
-      }
-    },
-    stopAutoRefresh () {
-      if (this.refreshTimer) {
-        clearInterval(this.refreshTimer)
-        this.refreshTimer = null
-      }
-    },
-    handleVisibilityChange () {
-      if (!document.hidden) {
-        this.loadChartData() // 当页面重新可见时刷新数据
-      }
-    },
-    handleWindowFocus () {
-      this.loadChartData() // 当窗口获得焦点时刷新数据
-    },
-    toggleAutoRefresh () {
-      this.autoRefreshEnabled = !this.autoRefreshEnabled
-      if (this.autoRefreshEnabled) {
-        this.startAutoRefresh()
-      } else {
-        this.stopAutoRefresh()
-      }
-    },
-    refreshNow () {
-      this.loadChartData()
-    }
+const initChart = () => {
+  if (chartRef.value) {
+    chart = echarts.init(chartRef.value, 'dark')
   }
 }
+
+const loadChartData = async () => {
+  try {
+    const response = await getControlChartData() as ControlChartData
+    chartData.value = response
+    updateStatistics()
+    updateRuleResults()
+    renderChart()
+  } catch (error) {
+    console.error('加载控制图数据失败:', error)
+  }
+}
+
+const updateStatistics = () => {
+  if (!chartData.value) return
+  statistics.totalSamples = chartData.value.u_list.length
+  statistics.meanU = chartData.value.center_line
+  statistics.ucl = chartData.value.ucl_list[0] || 0
+  
+  const uniqueAbnormal = new Set<number>()
+  Object.values(chartData.value.abnormal_rules).forEach(indices => {
+    indices.forEach(i => uniqueAbnormal.add(i))
+  })
+  statistics.totalAbnormal = uniqueAbnormal.size
+}
+
+const updateRuleResults = () => {
+  if (!chartData.value) return
+  const { abnormal_rules } = chartData.value
+  
+  ruleResults.value = ruleResults.value.map((rule, index) => {
+    const ruleNum = index + 1
+    const indices = abnormal_rules[ruleNum] || []
+    return {
+      ...rule,
+      abnormalCount: indices.length
+    }
+  })
+}
+
+const renderChart = () => {
+  if (!chart || !chartData.value) return
+  
+  const { u_list, center_line, abnormal_points, ucl_list, lcl_list } = chartData.value
+  const sampleLabels = u_list.map((_, i) => `#${i + 1}`)
+  
+  const option: echarts.EChartsOption = {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(17, 24, 39, 0.95)',
+      borderColor: 'rgba(0, 212, 255, 0.3)',
+      textStyle: { color: '#f1f5f9' }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: sampleLabels,
+      axisLine: { lineStyle: { color: 'rgba(0, 212, 255, 0.2)' } },
+      axisLabel: { color: '#94a3b8', fontFamily: 'JetBrains Mono' }
+    },
+    yAxis: {
+      type: 'value',
+      name: 'U值',
+      nameTextStyle: { color: '#94a3b8' },
+      axisLine: { lineStyle: { color: 'rgba(0, 212, 255, 0.2)' } },
+      splitLine: { lineStyle: { color: 'rgba(0, 212, 255, 0.1)' } },
+      axisLabel: { color: '#94a3b8', fontFamily: 'JetBrains Mono' }
+    },
+    series: [
+      {
+        name: 'U值',
+        type: 'line',
+        data: u_list.map((value, index) => ({
+          value,
+          itemStyle: {
+            color: abnormal_points.includes(index) ? '#ef4444' : '#00d4ff'
+          }
+        })),
+        symbol: 'circle',
+        symbolSize: 8,
+        lineStyle: { color: '#00d4ff', width: 2 },
+        emphasis: { scale: true }
+      },
+      {
+        name: '中心线',
+        type: 'line',
+        data: Array(u_list.length).fill(center_line),
+        lineStyle: { color: '#10b981', type: 'dashed', width: 1 },
+        symbol: 'none'
+      },
+      {
+        name: '控制上限',
+        type: 'line',
+        data: ucl_list,
+        lineStyle: { color: '#ef4444', type: 'dashed', width: 1 },
+        symbol: 'none'
+      },
+      {
+        name: '控制下限',
+        type: 'line',
+        data: lcl_list,
+        lineStyle: { color: '#ef4444', type: 'dashed', width: 1 },
+        symbol: 'none'
+      }
+    ]
+  }
+  
+  chart.setOption(option)
+}
+
+const toggleAutoRefresh = () => {
+  autoRefresh.value = !autoRefresh.value
+  if (autoRefresh.value) {
+    startAutoRefresh()
+  } else {
+    stopAutoRefresh()
+  }
+}
+
+const startAutoRefresh = () => {
+  stopAutoRefresh()
+  refreshTimer = setInterval(loadChartData, 30000)
+}
+
+const stopAutoRefresh = () => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+}
+
+onMounted(() => {
+  initChart()
+  loadChartData()
+  if (autoRefresh.value) startAutoRefresh()
+})
+
+onBeforeUnmount(() => {
+  if (chart) chart.dispose()
+  stopAutoRefresh()
+})
 </script>
 
 <style scoped>
-.chart-legend {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 10px 0 0 0;
-  padding: 10px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
-  position: relative;
-  top: 20px;
+.page-content {
+  padding: 40px;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
-.legend-item {
+.page-header {
   display: flex;
-  align-items: center;
-  margin: 0 15px;
-  font-size: 14px;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
 }
 
-.legend-dot {
-  width: 16px;
-  height: 16px;
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.05em;
+}
+
+.page-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.header-right {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.btn-secondary:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.auto-refresh {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.auto-refresh.active {
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.refresh-dot {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  margin-right: 6px;
-  border: 1px solid #ccc;
+  background: currentColor;
 }
 
-.legend-dot.normal {
-  background-color: #1890ff;
+.auto-refresh.active .refresh-dot {
+  animation: pulse 2s ease-in-out infinite;
 }
 
-.legend-dot.abnormal {
-  background-color: #ff4d4f;
-}
-</style>
-
-<style scoped>
-.container {
-  background: url("../assets/bg5.jpg") no-repeat center;
-  background-size: 100% 100%;
-  min-height: 100vh;
-  padding: 20px;
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 32px;
 }
 
-.content {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  margin-bottom: 20px;
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
 }
 
-h1 {
-  color: #303133;
-  font-size: 24px;
-  margin-bottom: 20px;
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--accent-gradient);
 }
 
-.chart-container {
-  background: #fff;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  padding: 15px;
-  margin-bottom: 20px;
+.stat-card.danger::before {
+  background: var(--danger);
+}
+
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  margin-bottom: 4px;
+}
+
+.stat-card.danger .stat-value {
+  color: var(--danger);
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.chart-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 32px;
 }
 
 .chart-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
-}
-
-.chart-title {
-  font-size: 18px;
-  font-weight: 500;
-  color: #303133;
-}
-
-.chart-action {
-  display: flex;
-  gap: 10px;
-}
-
-.chart {
-  width: 100%;
-  height: 400px;
-}
-
-.statistics {
-  background: #f0f2f5;
-  border-radius: 6px;
-  padding: 15px;
   margin-bottom: 20px;
 }
 
-.statistics-item {
-  display: inline-block;
-  margin-right: 20px;
-  margin-bottom: 10px;
+.chart-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: 0.05em;
 }
 
-.statistics-label {
-  font-size: 14px;
-  color: #666;
-  margin-right: 5px;
+.chart-legend {
+  display: flex;
+  gap: 20px;
 }
 
-.statistics-value {
-  font-size: 18px;
-  font-weight: 500;
-  color: #1890ff;
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
 }
 
-.abnormal-table {
-  background: #fff;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.abnormal-header {
-  background: #f0f2f5;
-  padding: 15px;
-  font-size: 16px;
-  font-weight: 500;
-  color: #303133;
-  border-bottom: 1px solid #e8e8e8;
-}
-
-.abnormal-content {
-  padding: 15px;
-}
-
-.empty-message {
-  text-align: center;
-  color: #999;
-  padding: 20px;
-}
-
-.update-time {
-  text-align: right;
-  font-size: 12px;
-  color: #999;
-  margin-top: 10px;
-}
-
-.button {
-  background-color: #1890ff;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.button:hover {
-  background-color: #40a9ff;
-}
-
-.button:active {
-  background-color: #096dd9;
-}
-
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 44px;
-  height: 24px;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: .4s;
-  border-radius: 24px;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 16px;
-  width: 16px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: .4s;
+.legend-dot {
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
 }
 
-input:checked + .slider {
-  background-color: #1890ff;
+.legend-dot.normal {
+  background: var(--accent-primary);
 }
 
-input:checked + .slider:before {
-  transform: translateX(20px);
+.legend-dot.abnormal {
+  background: var(--danger);
 }
 
-.refresh-control {
+.chart-container {
+  height: 400px;
+}
+
+.rules-section {
+  margin-top: 32px;
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  letter-spacing: 0.05em;
+}
+
+.rules-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.rule-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  transition: all var(--transition-normal);
+}
+
+.rule-card.danger {
+  border-color: rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.rule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.rule-number {
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+}
+
+.rule-status {
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
 }
 
-.refresh-label {
-  font-size: 14px;
-  color: #666;
+.rule-status.success {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--success);
+}
+
+.rule-status.danger {
+  background: rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+}
+
+.rule-description {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.rule-count {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.count-value {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.rule-card.danger .count-value {
+  color: var(--danger);
+}
+
+.count-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 1200px) {
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .rules-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-row,
+  .rules-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
