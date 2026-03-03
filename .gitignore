@@ -31,6 +31,18 @@ front_end/nvm-setup.exe
 # 忽略FILES文件夹及内容
 FILES/
 
+# 忽略检测结果文件
+back_end/static/results/images/*.png
+back_end/static/results/thumbnails/*.png
+back_end/static/results/jsons/*/
+!back_end/static/results/images/.gitkeep
+!back_end/static/results/jsons/.gitkeep
+!back_end/static/results/thumbnails/.gitkeep
+
+# 忽略数据库文件
+back_end/database.db
+
 # 忽略除readme.md外的所有markdown文件
 *.md
 !readme.md
+!README.md

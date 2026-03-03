@@ -2,7 +2,7 @@
 
 ## 项目介绍
 
-本项目是一个基于Flask框架开发的PCB缺陷检测系统后端，提供图片检测、数据管理和控制图生成等功能。系统可以接收前端上传的PCB图片，使用深度学习模型进行缺陷检测，并将检测结果存储到数据库中。同时，系统还支持生成U图控制图，用于监控PCB生产质量。
+本项目是一个基于FastAPI框架开发的PCB缺陷检测系统后端，提供图片检测、数据管理和控制图生成等功能。系统可以接收前端上传的PCB图片，使用深度学习模型进行缺陷检测，并将检测结果存储到数据库中。同时，系统还支持生成U图控制图，用于监控PCB生产质量。
 
 ## Quick Start
 
@@ -33,8 +33,8 @@ pip install -r requirements.txt
 ### 4. 运行应用
 
 ```bash
-# 启动Flask应用
-python app.py
+# 启动FastAPI应用
+python main.py
 ```
 
 应用将在 `http://localhost:5000` 上运行。
@@ -43,11 +43,17 @@ python app.py
 
 ```
 back_end/
-├── app.py                 # 主应用文件，包含API路由和数据库配置
-├── database.db            # SQLite数据库文件（自动生成）
-├── dataset_split/         # 数据集分割目录
-│   ├── train/             # 训练集
-│   └── PCB.yaml           # 数据集配置文件
+├── main.py                # FastAPI 入口文件
+├── app/                   # 应用主目录
+│   ├── main.py            # FastAPI 应用配置
+│   ├── config.py          # 配置管理
+│   ├── database.py        # 数据库连接
+│   ├── models/            # SQLAlchemy 模型
+│   │   └── models.py      # 数据表定义
+│   ├── routers/           # API 路由
+│   │   └── api.py         # API 端点定义
+│   ├── schemas/           # Pydantic 模型
+│   └── services/          # 业务逻辑
 ├── functions/             # 功能模块
 │   ├── detect_img.py      # 图片检测函数
 │   ├── control_chart.py   # 控制图生成函数
@@ -60,11 +66,21 @@ back_end/
 └── requirements.txt       # Python依赖文件
 ```
 
+## 技术栈
+
+- **FastAPI** - 现代高性能 Python Web 框架
+- **Pydantic** - 数据验证和序列化
+- **SQLAlchemy 2.0** - ORM 数据库管理
+- **Uvicorn** - ASGI 服务器
+- **OpenCV 4.x** - 图像处理
+- **YOLOv8** - 缺陷检测模型
+- **SQLite** - 轻量级数据库
+
 ## API接口说明
 
 ### 1. 图片检测
 
-- **URL**: `/detectByImg`
+- **URL**: `/api/detectByImg`
 - **方法**: POST
 - **参数**: 
   - `file`: 上传的图片文件
@@ -73,7 +89,7 @@ back_end/
 
 ### 2. 获取图片列表
 
-- **URL**: `/images`
+- **URL**: `/api/images`
 - **方法**: GET
 - **参数**: 
   - `startDate`: 开始日期（可选，格式：YYYY-MM-DD HH:MM:SS）
@@ -83,14 +99,14 @@ back_end/
 
 ### 3. 获取单个图片信息
 
-- **URL**: `/images/<int:image_id>`
+- **URL**: `/api/images/<int:image_id>`
 - **方法**: GET
 - **返回**: 单个图片的详细信息JSON数据
 - **描述**: 根据ID获取指定图片的详细检测信息
 
 ### 4. 添加图片记录
 
-- **URL**: `/images`
+- **URL**: `/api/images`
 - **方法**: POST
 - **参数**: JSON格式的图片信息
 - **返回**: 添加成功的图片信息JSON数据
@@ -98,7 +114,7 @@ back_end/
 
 ### 5. 保存检测结果
 
-- **URL**: `/images/detection_results`
+- **URL**: `/api/images/detection_results`
 - **方法**: POST
 - **参数**: JSON格式的检测结果
 - **返回**: 保存成功的消息
@@ -106,21 +122,21 @@ back_end/
 
 ### 6. 获取控制图数据
 
-- **URL**: `/control-chart-data`
+- **URL**: `/api/control-chart-data`
 - **方法**: GET
 - **返回**: 控制图数据JSON，包含25组样本数据和异常检测结果
 - **描述**: 生成U图控制图数据，每3张PCB为一个样本，返回最近25组数据
 
 ### 7. 获取邮箱设置
 
-- **URL**: `/email-settings`
+- **URL**: `/api/email-settings`
 - **方法**: GET
 - **返回**: 当前邮箱设置JSON数据
 - **描述**: 获取当前用于接收报警邮件的邮箱地址
 
 ### 8. 更新邮箱设置
 
-- **URL**: `/email-settings`
+- **URL**: `/api/email-settings`
 - **方法**: PUT
 - **参数**: 
   - `email`: 新的邮箱地址
@@ -185,6 +201,52 @@ back_end/
 后端提供了静态文件服务，可以直接访问前端构建后的文件。前端构建后，将`dist`目录复制到`front_end`目录下，后端将自动提供前端访问。
 
 访问地址：`http://localhost:5000`
+
+## 开发计划（1个月周期）
+
+### 第1周：需求分析与架构设计
+
+**里程碑：完成后端架构设计与技术选型**
+
+| 任务 | 目标 |
+|------|------|
+| 需求调研与分析 | 明确PCB缺陷检测的业务需求和功能边界 |
+| 技术选型确认 | 确定FastAPI技术栈，评估可行性 |
+| 数据库设计 | 完成ER图设计，定义核心数据表结构 |
+| API接口设计 | 设计RESTful API规范，编写接口文档 |
+
+### 第2周：后端核心功能开发
+
+**里程碑：完成后端核心API开发与测试**
+
+| 任务 | 目标 |
+|------|------|
+| 项目框架搭建 | 完成FastAPI项目结构、数据库连接、配置管理 |
+| 用户认证模块 | 实现JWT登录认证、用户权限管理 |
+| 图片检测接口 | 对接YOLOv8模型，实现图片上传与缺陷检测 |
+| 数据存储模块 | 实现检测结果的数据库存储与查询 |
+| 控制图计算模块 | 实现U图控制图数据计算与异常检测算法 |
+
+### 第3周：前端开发与集成
+
+**里程碑：完成后端与前端的联调**
+
+| 任务 | 目标 |
+|------|------|
+| API联调支持 | 配置CORS，支持前端跨域请求 |
+| 接口优化 | 根据前端需求优化API响应格式 |
+| 错误处理 | 完善异常处理和错误响应 |
+
+### 第4周：测试优化与部署
+
+**里程碑：完成后端测试与生产部署**
+
+| 任务 | 目标 |
+|------|------|
+| 单元测试 | 编写核心模块的单元测试 |
+| 性能优化 | 优化检测速度、数据库查询性能 |
+| 异常报警功能 | 实现邮件通知与AI分析报警 |
+| 部署配置 | 编写部署文档，配置生产环境 |
 
 ## 许可证
 
