@@ -8,6 +8,8 @@ from openai import OpenAI
 
 load_dotenv()
 
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD') or os.getenv('SMTP_PASSWORD')
+
 
 def analyze_control_chart(chart_data: Dict[str, Any]) -> str:
     try:
@@ -63,7 +65,11 @@ def send_email(subject: str, body: str, to_email: str = '2395365918@qq.com') -> 
         smtp_server = 'smtp.qq.com'
         smtp_port = 465
         sender_email = '3600094151@qq.com'
-        password = 'rcuinubewmifdbgj'
+        
+        password = SMTP_PASSWORD
+        if not password:
+            print('❌ 邮件发送失败: SMTP_PASSWORD未配置')
+            return False
 
         with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
             server.login(sender_email, password)

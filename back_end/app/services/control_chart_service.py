@@ -1,5 +1,22 @@
 import math
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
+
+
+D3_TABLE = {2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0.076, 8: 0.136, 9: 0.184, 10: 0.223, 11: 0.256, 12: 0.283, 13: 0.307, 14: 0.328, 15: 0.347, 16: 0.363, 17: 0.378, 18: 0.391, 19: 0.403, 20: 0.415, 21: 0.425, 22: 0.434, 23: 0.443, 24: 0.451, 25: 0.459}
+D4_TABLE = {2: 3.267, 3: 2.574, 4: 2.282, 5: 2.114, 6: 2.004, 7: 1.924, 8: 1.864, 9: 1.816, 10: 1.777, 11: 1.744, 12: 1.717, 13: 1.693, 14: 1.672, 15: 1.653, 16: 1.637, 17: 1.622, 18: 1.608, 19: 1.597, 20: 1.585, 21: 1.575, 22: 1.566, 23: 1.557, 24: 1.548, 25: 1.541}
+A2_TABLE = {2: 1.880, 3: 1.023, 4: 0.729, 5: 0.577, 6: 0.483, 7: 0.419, 8: 0.373, 9: 0.337, 10: 0.308, 11: 0.285, 12: 0.266, 13: 0.249, 14: 0.235, 15: 0.223, 16: 0.212, 17: 0.203, 18: 0.194, 19: 0.187, 20: 0.180, 21: 0.173, 22: 0.167, 23: 0.162, 24: 0.157, 25: 0.153}
+A3_TABLE = {2: 2.659, 3: 1.954, 4: 1.628, 5: 1.427, 6: 1.287, 7: 1.182, 8: 1.099, 9: 1.032, 10: 0.975, 11: 0.927, 12: 0.886, 13: 0.850, 14: 0.817, 15: 0.789, 16: 0.763, 17: 0.739, 18: 0.718, 19: 0.698, 20: 0.680, 21: 0.663, 22: 0.647, 23: 0.633, 24: 0.619, 25: 0.606}
+B3_TABLE = {2: 0, 3: 0, 4: 0, 5: 0, 6: 0.030, 7: 0.118, 8: 0.185, 9: 0.239, 10: 0.284, 11: 0.321, 12: 0.354, 13: 0.382, 14: 0.406, 15: 0.428, 16: 0.448, 17: 0.466, 18: 0.482, 19: 0.497, 20: 0.510, 21: 0.523, 22: 0.534, 23: 0.545, 24: 0.555, 25: 0.565}
+B4_TABLE = {2: 3.267, 3: 2.568, 4: 2.266, 5: 2.089, 6: 1.970, 7: 1.882, 8: 1.815, 9: 1.761, 10: 1.716, 11: 1.679, 12: 1.646, 13: 1.618, 14: 1.594, 15: 1.572, 16: 1.552, 17: 1.534, 18: 1.518, 19: 1.503, 20: 1.490, 21: 1.477, 22: 1.466, 23: 1.455, 24: 1.445, 25: 1.435}
+C4_TABLE = {2: 0.7979, 3: 0.8862, 4: 0.9213, 5: 0.9400, 6: 0.9515, 7: 0.9594, 8: 0.9650, 9: 0.9693, 10: 0.9727, 11: 0.9754, 12: 0.9776, 13: 0.9794, 14: 0.9810, 15: 0.9823, 16: 0.9835, 17: 0.9845, 18: 0.9854, 19: 0.9862, 20: 0.9869, 21: 0.9876, 22: 0.9882, 23: 0.9887, 24: 0.9892, 25: 0.9896}
+
+
+def get_coefficient(table: Dict[int, float], n: int) -> float:
+    if n in table:
+        return table[n]
+    if n < 2:
+        return table[2]
+    return table[25]
 
 
 def calculate_u_i(c_i: int, n_i: float) -> float:
@@ -55,6 +72,232 @@ def calculate_approximate_control_limits(u_bar: float, n_list: List[float]) -> T
     lcl = u_bar - 3 * sigma
     
     return ucl, max(0, lcl)
+
+
+def calculate_range(values: List[float]) -> float:
+    if not values:
+        return 0.0
+    return max(values) - min(values)
+
+
+def calculate_std_dev(values: List[float]) -> float:
+    if len(values) < 2:
+        return 0.0
+    mean = sum(values) / len(values)
+    variance = sum((x - mean) ** 2 for x in values) / (len(values) - 1)
+    return math.sqrt(variance)
+
+
+def calculate_xbar_r_chart(data_groups: List[List[float]], subgroup_size: Optional[int] = None) -> Dict:
+    if not data_groups:
+        raise ValueError("数据组不能为空")
+    
+    x_bar_list = []
+    r_list = []
+    n_list = []
+    
+    for group in data_groups:
+        if not group:
+            continue
+        n = len(group)
+        n_list.append(n)
+        x_bar = sum(group) / n
+        r = calculate_range(group)
+        x_bar_list.append(x_bar)
+        r_list.append(r)
+    
+    if not x_bar_list:
+        raise ValueError("没有有效的数据组")
+    
+    k = len(x_bar_list)
+    x_double_bar = sum(x_bar_list) / k
+    r_bar = sum(r_list) / k
+    
+    avg_n = sum(n_list) / len(n_list) if n_list else 0
+    n = subgroup_size if subgroup_size else round(avg_n)
+    n = max(2, min(25, n))
+    
+    A2 = get_coefficient(A2_TABLE, n)
+    D3 = get_coefficient(D3_TABLE, n)
+    D4 = get_coefficient(D4_TABLE, n)
+    
+    xbar_ucl = x_double_bar + A2 * r_bar
+    xbar_lcl = x_double_bar - A2 * r_bar
+    xbar_cl = x_double_bar
+    
+    r_ucl = D4 * r_bar
+    r_lcl = D3 * r_bar
+    r_cl = r_bar
+    
+    xbar_abnormal = check_all_rules_for_values(x_bar_list, xbar_cl, xbar_ucl, xbar_lcl)
+    r_abnormal = check_all_rules_for_values(r_list, r_cl, r_ucl, r_lcl)
+    
+    xbar_abnormal_points = set()
+    for indices in xbar_abnormal.values():
+        xbar_abnormal_points.update(indices)
+    
+    r_abnormal_points = set()
+    for indices in r_abnormal.values():
+        r_abnormal_points.update(indices)
+    
+    return {
+        'chart_type': 'X-R',
+        'xbar_chart': {
+            'data_points': x_bar_list,
+            'center_line': xbar_cl,
+            'ucl': xbar_ucl,
+            'lcl': max(0, xbar_lcl),
+            'abnormal_points': sorted(xbar_abnormal_points),
+            'abnormal_rules': xbar_abnormal
+        },
+        'r_chart': {
+            'data_points': r_list,
+            'center_line': r_cl,
+            'ucl': r_ucl,
+            'lcl': max(0, r_lcl),
+            'abnormal_points': sorted(r_abnormal_points),
+            'abnormal_rules': r_abnormal
+        },
+        'statistics': {
+            'total_groups': k,
+            'subgroup_size': n,
+            'grand_mean': x_double_bar,
+            'avg_range': r_bar,
+            'coefficients': {'A2': A2, 'D3': D3, 'D4': D4},
+            'process_sigma_estimate': r_bar / get_coefficient(D4_TABLE, n) * (get_coefficient(D4_TABLE, n) - 1) / 3 if r_bar > 0 else 0
+        },
+        'parameters': {
+            'subgroup_size': n,
+            'control_limit_coefficients': {'A2': A2, 'D3': D3, 'D4': D4}
+        },
+        'message': 'X-R控制图数据生成成功'
+    }
+
+
+def calculate_xbar_s_chart(data_groups: List[List[float]], subgroup_size: Optional[int] = None) -> Dict:
+    if not data_groups:
+        raise ValueError("数据组不能为空")
+    
+    x_bar_list = []
+    s_list = []
+    n_list = []
+    
+    for group in data_groups:
+        if not group:
+            continue
+        n = len(group)
+        n_list.append(n)
+        x_bar = sum(group) / n
+        s = calculate_std_dev(group)
+        x_bar_list.append(x_bar)
+        s_list.append(s)
+    
+    if not x_bar_list:
+        raise ValueError("没有有效的数据组")
+    
+    k = len(x_bar_list)
+    x_double_bar = sum(x_bar_list) / k
+    s_bar = sum(s_list) / k
+    
+    avg_n = sum(n_list) / len(n_list) if n_list else 0
+    n = subgroup_size if subgroup_size else round(avg_n)
+    n = max(2, min(25, n))
+    
+    A3 = get_coefficient(A3_TABLE, n)
+    B3 = get_coefficient(B3_TABLE, n)
+    B4 = get_coefficient(B4_TABLE, n)
+    c4 = get_coefficient(C4_TABLE, n)
+    
+    xbar_ucl = x_double_bar + A3 * s_bar
+    xbar_lcl = x_double_bar - A3 * s_bar
+    xbar_cl = x_double_bar
+    
+    s_ucl = B4 * s_bar
+    s_lcl = B3 * s_bar
+    s_cl = s_bar
+    
+    xbar_abnormal = check_all_rules_for_values(x_bar_list, xbar_cl, xbar_ucl, xbar_lcl)
+    s_abnormal = check_all_rules_for_values(s_list, s_cl, s_ucl, s_lcl)
+    
+    xbar_abnormal_points = set()
+    for indices in xbar_abnormal.values():
+        xbar_abnormal_points.update(indices)
+    
+    s_abnormal_points = set()
+    for indices in s_abnormal.values():
+        s_abnormal_points.update(indices)
+    
+    process_sigma = s_bar / c4 if c4 > 0 else 0
+    
+    return {
+        'chart_type': 'X-s',
+        'xbar_chart': {
+            'data_points': x_bar_list,
+            'center_line': xbar_cl,
+            'ucl': xbar_ucl,
+            'lcl': max(0, xbar_lcl),
+            'abnormal_points': sorted(xbar_abnormal_points),
+            'abnormal_rules': xbar_abnormal
+        },
+        's_chart': {
+            'data_points': s_list,
+            'center_line': s_cl,
+            'ucl': s_ucl,
+            'lcl': max(0, s_lcl),
+            'abnormal_points': sorted(s_abnormal_points),
+            'abnormal_rules': s_abnormal
+        },
+        'statistics': {
+            'total_groups': k,
+            'subgroup_size': n,
+            'grand_mean': x_double_bar,
+            'avg_std_dev': s_bar,
+            'coefficients': {'A3': A3, 'B3': B3, 'B4': B4, 'c4': c4},
+            'process_sigma_estimate': process_sigma
+        },
+        'parameters': {
+            'subgroup_size': n,
+            'control_limit_coefficients': {'A3': A3, 'B3': B3, 'B4': B4, 'c4': c4}
+        },
+        'message': 'X-s控制图数据生成成功'
+    }
+
+
+def check_all_rules_for_values(value_list: List[float], center_line: float, ucl: float, lcl: float) -> Dict[int, List[int]]:
+    ucl_list = [ucl] * len(value_list)
+    lcl_list = [lcl] * len(value_list)
+    return check_all_rules(value_list, center_line, ucl_list, lcl_list)
+
+
+def recommend_chart_type(data_groups: List[List[float]], data_type: str = 'measurement') -> Dict:
+    if data_type == 'attribute':
+        return {
+            'recommended': 'U',
+            'reason': '属性数据推荐使用U图（单位缺陷数图）',
+            'alternatives': ['P', 'NP', 'C']
+        }
+    
+    if not data_groups:
+        return {
+            'recommended': 'U',
+            'reason': '无数据，默认推荐U图',
+            'alternatives': []
+        }
+    
+    avg_size = sum(len(g) for g in data_groups) / len(data_groups) if data_groups else 0
+    
+    if avg_size <= 10:
+        return {
+            'recommended': 'XR',
+            'reason': f'平均样本量{avg_size:.1f}≤10，推荐使用X-R图（均值-极差图）',
+            'alternatives': ['XS']
+        }
+    else:
+        return {
+            'recommended': 'XS',
+            'reason': f'平均样本量{avg_size:.1f}>10，推荐使用X-s图（均值-标准差图）',
+            'alternatives': ['XR']
+        }
 
 
 def check_rule_1(u_list: List[float], ucl_list: List[float]) -> List[int]:
@@ -129,6 +372,19 @@ def check_rule_4(u_list: List[float]) -> List[int]:
 
 def get_zones(u: float, center_line: float, ucl: float, lcl: float) -> Dict[str, bool]:
     distance = ucl - center_line
+    if distance <= 0:
+        distance = abs(center_line - lcl)
+    
+    if distance <= 0:
+        return {
+            'above_a': u > center_line,
+            'above_b': False,
+            'above_c': False,
+            'below_c': False,
+            'below_b': False,
+            'below_a': u < center_line
+        }
+    
     zone_a_lower = center_line + (distance * 2/3)
     zone_b_lower = center_line + (distance * 1/3)
     zone_b_upper = center_line - (distance * 1/3)
@@ -140,7 +396,7 @@ def get_zones(u: float, center_line: float, ucl: float, lcl: float) -> Dict[str,
         'above_c': zone_b_lower < u <= zone_a_lower,
         'below_c': zone_b_upper < u <= zone_b_lower,
         'below_b': zone_a_upper < u <= zone_b_upper,
-        'below_a': u <= zone_a_upper
+        'below_a': u < lcl
     }
     
     return zones

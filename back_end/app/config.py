@@ -5,7 +5,7 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
-    APP_NAME: str = "PCB缺陷检测系统"
+    APP_NAME: str = "通用SPC采集和监测系统"
     APP_VERSION: str = "2.0.0"
     DEBUG: bool = True
     
@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     UPLOAD_DIR: str = "./images"
     RESULTS_DIR: str = "./static/results"
     IMAGES_RESULTS_DIR: str = "./static/results/images"
+    THUMBNAILS_RESULTS_DIR: str = "./static/results/thumbnails"
     JSON_RESULTS_DIR: str = "./static/results/jsons"
     
     CORS_ORIGINS: list[str] = ["http://localhost:8080", "http://localhost:5173", "http://127.0.0.1:8080", "http://127.0.0.1:5173"]

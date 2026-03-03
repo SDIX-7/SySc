@@ -5,8 +5,8 @@
     <div class="page-content">
       <div class="page-header">
         <div class="header-left">
-          <h1 class="page-title">检测历史</h1>
-          <p class="page-subtitle">查看和分析历史检测记录</p>
+          <h1 class="page-title">监测历史</h1>
+          <p class="page-subtitle">查看和分析历史监测记录</p>
         </div>
         <div class="header-right">
           <div class="filter-group">
@@ -61,7 +61,7 @@
           </div>
           <div class="stat-content">
             <span class="stat-value">{{ defectCount }}</span>
-            <span class="stat-label">缺陷数量</span>
+            <span class="stat-label">异常数量</span>
           </div>
         </div>
         <div class="stat-card">
@@ -86,7 +86,7 @@
               <th>图片</th>
               <th>名称</th>
               <th>状态</th>
-              <th>缺陷数</th>
+              <th>异常数</th>
               <th>类型</th>
               <th>时间</th>
             </tr>

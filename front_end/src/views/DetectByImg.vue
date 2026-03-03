@@ -5,8 +5,8 @@
     <div class="detection-layout">
       <div class="upload-section">
         <div class="section-header">
-          <h2 class="section-title">图片上传</h2>
-          <p class="section-subtitle">上传PCB图片进行缺陷检测</p>
+          <h2 class="section-title">数据采集</h2>
+          <p class="section-subtitle">上传检测样本数据进行质量分析</p>
         </div>
         
         <div 

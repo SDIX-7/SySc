@@ -2,15 +2,17 @@
   <header class="navbar">
     <div class="navbar-container">
       <div class="navbar-brand">
-        <div class="logo-container">
-          <div class="logo-ring"></div>
-          <div class="logo-core">
-            <span class="logo-text">PCB</span>
+        <router-link to="/" class="logo-link">
+          <div class="logo-container">
+            <div class="logo-ring"></div>
+            <div class="logo-core">
+              <span class="logo-text">SPC</span>
+            </div>
           </div>
-        </div>
+        </router-link>
         <div class="brand-text">
-          <span class="brand-title">缺陷检测系统</span>
-          <span class="brand-subtitle">质量控制平台</span>
+          <span class="brand-title">通用SPC</span>
+          <span class="brand-subtitle">采集和监测平台</span>
         </div>
       </div>
       
@@ -41,21 +43,22 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { 
-  Camera, 
-  Clock, 
-  TrendCharts
+  HomeFilled, 
+  Setting
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
 
 const menuItems = [
-  { name: '图像检测', path: '/detect-by-img', icon: Camera },
-  { name: '历史记录', path: '/history', icon: Clock },
-  { name: '过程控制', path: '/process-control', icon: TrendCharts },
+  { name: '首页', path: '/', icon: HomeFilled },
+  { name: '产线管理', path: '/production-lines', icon: Setting },
 ]
 
 const isActive = (path: string) => {
-  return route.path === path
+  if (path === '/') {
+    return route.path === '/'
+  }
+  return route.path.startsWith(path)
 }
 </script>
 
@@ -86,6 +89,10 @@ const isActive = (path: string) => {
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.logo-link {
+  text-decoration: none;
 }
 
 .logo-container {

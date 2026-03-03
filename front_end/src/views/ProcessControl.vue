@@ -5,8 +5,8 @@
     <div class="page-content">
       <div class="page-header">
         <div class="header-left">
-          <h1 class="page-title">过程控制</h1>
-          <p class="page-subtitle">实时U图监控和异常模式检测</p>
+          <h1 class="page-title">SPC控制图</h1>
+          <p class="page-subtitle">实时监控生产过程质量状态</p>
         </div>
         <div class="header-right">
           <button class="btn-secondary" @click="loadChartData">

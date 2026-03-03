@@ -6,24 +6,21 @@
       <div class="hero-content">
         <div class="hero-badge animate-slide-up">
           <span class="badge-dot"></span>
-          <span>PCB 质量检测系统</span>
+          <span>通用SPC采集和监测系统</span>
         </div>
         <h1 class="hero-title animate-slide-up delay-1">
           <span class="title-line">智能</span>
-          <span class="title-line gradient-text">缺陷检测</span>
+          <span class="title-line gradient-text">统计过程控制</span>
         </h1>
         <p class="hero-description animate-slide-up delay-2">
-          基于深度学习的PCB缺陷检测系统，支持实时分析、质量控制图监控和异常报警。
+          支持多产线管理、多种控制图类型、GB 2828抽样方案，实时采集和分析生产质量数据。
         </p>
         <div class="hero-actions animate-slide-up delay-3">
-          <router-link to="/detect-by-img" class="btn-primary">
-            <span>开始检测</span>
+          <router-link to="/production-lines" class="btn-primary">
+            <span>产线管理</span>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
-          </router-link>
-          <router-link to="/history" class="btn-secondary">
-            查看历史
           </router-link>
         </div>
       </div>
@@ -75,39 +72,39 @@
 
 <script setup lang="ts">
 import Menu from '@/components/Menu.vue'
-import { Camera, TrendCharts, Clock, Cpu } from '@element-plus/icons-vue'
+import { Camera, TrendCharts, Setting } from '@element-plus/icons-vue'
 
 const features = [
   {
-    title: '图像检测',
-    description: '上传PCB图片进行缺陷检测，支持缺孔、鼠咬、开路、短路等多种缺陷类型。',
-    icon: Camera,
-    link: '/detect-by-img'
+    title: '产线管理',
+    description: '管理多条生产线，配置数据类型、控制图类型和抽样方案。',
+    icon: Setting,
+    link: '/production-lines'
   },
   {
-    title: '控制图分析',
-    description: '实时U图监控，自动检测8种异常规则，及时发现生产问题。',
+    title: '数据采集',
+    description: '支持图片和Excel数据采集，自动数据校验和预处理。',
     icon: TrendCharts,
-    link: '/process-control'
+    link: '/production-lines'
   },
   {
-    title: '历史记录',
-    description: '完整的检测历史记录，支持按日期筛选和详细分析。',
-    icon: Clock,
-    link: '/history'
+    title: 'SPC控制图',
+    description: '支持X-R图、X-s图、P图、NP图、C图、U图等多种控制图，实时监控生产质量。',
+    icon: TrendCharts,
+    link: '/production-lines'
   },
   {
-    title: 'AI分析',
-    description: '集成DeepSeek AI，智能分析缺陷原因并提供改进建议。',
-    icon: Cpu,
-    link: '/process-control'
+    title: '过程能力分析',
+    description: '计算Cp、Cpk、Pp、Ppk等能力指数，评估过程能力是否满足质量要求。',
+    icon: TrendCharts,
+    link: '/capability-analysis/history'
   }
 ]
 
 const stats = [
-  { value: '99.2%', label: '检测准确率' },
-  { value: '<50ms', label: '响应时间' },
-  { value: '8种', label: '异常规则' },
+  { value: '6种', label: '控制图类型' },
+  { value: '100+', label: '产线支持' },
+  { value: '99.5%', label: '数据准确率' },
   { value: '24/7', label: '全天候运行' }
 ]
 </script>

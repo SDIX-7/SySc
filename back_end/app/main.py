@@ -6,7 +6,11 @@ import os
 
 from .config import settings
 from .database import engine, Base, SessionLocal
-from .models.models import EmailSettings
+from .models.models import (
+    Image, EmailSettings, User, 
+    ProductionLine, MeasurementData, AttributeData,
+    ControlChartConfig, SamplingPlan, SamplingRecord, CapabilityAnalysis
+)
 from .routers import api
 
 Base.metadata.create_all(bind=engine)
@@ -21,7 +25,7 @@ db.close()
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="PCB缺陷检测与质量信息系统 API",
+    description="通用SPC采集和监测系统 API",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -35,10 +39,12 @@ app.add_middleware(
 )
 
 os.makedirs(settings.IMAGES_RESULTS_DIR, exist_ok=True)
+os.makedirs(settings.THUMBNAILS_RESULTS_DIR, exist_ok=True)
 os.makedirs(settings.JSON_RESULTS_DIR, exist_ok=True)
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
 app.mount("/results/images", StaticFiles(directory=settings.IMAGES_RESULTS_DIR), name="result_images")
+app.mount("/results/thumbnails", StaticFiles(directory=settings.THUMBNAILS_RESULTS_DIR), name="result_thumbnails")
 app.mount("/results/jsons", StaticFiles(directory=settings.JSON_RESULTS_DIR), name="result_jsons")
 
 app.include_router(api.router)

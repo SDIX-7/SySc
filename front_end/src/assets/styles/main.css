@@ -286,3 +286,238 @@ h1, h2, h3, h4, h5, h6 {
 .delay-2 { animation-delay: 0.2s; }
 .delay-3 { animation-delay: 0.3s; }
 .delay-4 { animation-delay: 0.4s; }
+
+
+.el-dialog {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-lg) !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 212, 255, 0.1) !important;
+  overflow: hidden;
+}
+
+.el-dialog::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+}
+
+.el-dialog__header {
+  padding: 20px 24px !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  background: var(--bg-secondary) !important;
+}
+
+.el-dialog__title {
+  font-family: var(--font-display) !important;
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  color: var(--text-primary) !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+}
+
+.el-dialog__headerbtn {
+  top: 20px !important;
+}
+
+.el-dialog__headerbtn .el-dialog__close {
+  color: var(--text-muted) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.el-dialog__headerbtn:hover .el-dialog__close {
+  color: var(--accent-primary) !important;
+}
+
+.el-dialog__body {
+  padding: 24px !important;
+  color: var(--text-primary) !important;
+  background: var(--bg-card) !important;
+}
+
+.el-dialog__footer {
+  padding: 16px 24px !important;
+  border-top: 1px solid var(--border-color) !important;
+  background: var(--bg-secondary) !important;
+}
+
+.el-form-item__label {
+  font-family: var(--font-display) !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  color: var(--text-secondary) !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+}
+
+.el-input__wrapper {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: none !important;
+  border-radius: var(--radius-sm) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.el-input__wrapper:hover {
+  border-color: var(--accent-primary) !important;
+}
+
+.el-input__wrapper.is-focus {
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2) !important;
+}
+
+.el-input__inner {
+  color: var(--text-primary) !important;
+  font-family: var(--font-body) !important;
+}
+
+.el-input__inner::placeholder {
+  color: var(--text-muted) !important;
+}
+
+.el-textarea__inner {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-sm) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-body) !important;
+  box-shadow: none !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.el-textarea__inner:hover {
+  border-color: var(--accent-primary) !important;
+}
+
+.el-textarea__inner:focus {
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2) !important;
+}
+
+.el-select__wrapper {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: none !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+.el-select__wrapper:hover {
+  border-color: var(--accent-primary) !important;
+}
+
+.el-select__wrapper.is-focused {
+  border-color: var(--accent-primary) !important;
+  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2) !important;
+}
+
+.el-select__selected-item,
+.el-select__placeholder {
+  color: var(--text-primary) !important;
+}
+
+.el-select__dropdown {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+.el-select-dropdown__item {
+  color: var(--text-secondary) !important;
+  font-family: var(--font-body) !important;
+}
+
+.el-select-dropdown__item:hover {
+  background: var(--bg-secondary) !important;
+  color: var(--accent-primary) !important;
+}
+
+.el-select-dropdown__item.is-selected {
+  color: var(--accent-primary) !important;
+  font-weight: 600 !important;
+}
+
+.el-radio__label {
+  color: var(--text-secondary) !important;
+  font-family: var(--font-body) !important;
+}
+
+.el-radio__inner {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+}
+
+.el-radio__input.is-checked .el-radio__inner {
+  background: var(--accent-primary) !important;
+  border-color: var(--accent-primary) !important;
+}
+
+.el-radio__input.is-checked + .el-radio__label {
+  color: var(--accent-primary) !important;
+}
+
+.el-radio:hover .el-radio__inner {
+  border-color: var(--accent-primary) !important;
+}
+
+.el-button {
+  font-family: var(--font-display) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.05em !important;
+  border-radius: var(--radius-sm) !important;
+  transition: all var(--transition-fast) !important;
+}
+
+.el-button--default {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-secondary) !important;
+}
+
+.el-button--default:hover {
+  border-color: var(--accent-primary) !important;
+  color: var(--accent-primary) !important;
+}
+
+.el-button--primary {
+  background: var(--accent-gradient) !important;
+  border: none !important;
+  color: var(--bg-primary) !important;
+}
+
+.el-button--primary:hover {
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+.el-input-number {
+  width: 100% !important;
+}
+
+.el-input-number .el-input__wrapper {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-color) !important;
+}
+
+.el-input-number .el-input__wrapper:hover {
+  border-color: var(--accent-primary) !important;
+}
+
+.el-input-number__decrease,
+.el-input-number__increase {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-secondary) !important;
+}
+
+.el-input-number__decrease:hover,
+.el-input-number__increase:hover {
+  color: var(--accent-primary) !important;
+}
