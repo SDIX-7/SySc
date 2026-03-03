@@ -1,8 +1,7 @@
-# 质量信息系统--课程设计
+# SPC信息系统
 
 一个基于 FastAPI + Vue 3 的PCB缺陷检测与质量信息系统，包含图片缺陷检测、控制图分析、异常报警等功能。
 
-本项目基于 [YOLOv8-model-improvement](https://github.com/Zwc2003/YOLOv8-model-improvement) 项目进行二次开发。
 
 ## 项目结构
 
