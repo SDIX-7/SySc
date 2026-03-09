@@ -229,28 +229,15 @@
         <el-button type="primary" @click="updateLine" :loading="loading">保存</el-button>
       </template>
     </el-dialog>
-    
-    <el-dialog
-      v-model="showDeleteDialog"
-      title="确认删除"
-      width="400px"
-    >
-      <p>确定要删除产线 <strong>{{ deleteTarget?.line_name }}</strong> 吗？</p>
-      <p class="warning-text">此操作不可恢复，产线下的所有数据将被删除。</p>
-      <template #footer>
-        <el-button @click="showDeleteDialog = false">取消</el-button>
-        <el-button type="danger" @click="deleteLine" :loading="loading">删除</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import Menu from '@/components/Menu.vue'
 import { getProductionLines, createProductionLine, updateProductionLine, deleteProductionLine, getModelFiles } from '@/api'
+import { showDeleteConfirm, showMessage } from '@/utils/dialog'
 import type { ProductionLine, ProductionLineCreate, ProductionLineUpdate } from '@/types'
 
 const router = useRouter()
@@ -259,7 +246,6 @@ const lines = ref<ProductionLine[]>([])
 const loading = ref(false)
 const showCreateDialog = ref(false)
 const showEditDialog = ref(false)
-const showDeleteDialog = ref(false)
 const deleteTarget = ref<ProductionLine | null>(null)
 
 const formData = ref<ProductionLineCreate>({
@@ -396,24 +382,30 @@ const updateLine = async () => {
   }
 }
 
-const confirmDelete = (line: ProductionLine) => {
-  deleteTarget.value = line
-  showDeleteDialog.value = true
+const confirmDelete = async (line: ProductionLine) => {
+  try {
+    await showDeleteConfirm(`产线 "${line.line_name}"`)
+    deleteTarget.value = line
+    await executeDelete()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('删除产线失败:', error)
+    }
+  }
 }
 
-const deleteLine = async () => {
+const executeDelete = async () => {
   if (!deleteTarget.value) return
   
   try {
     loading.value = true
     await deleteProductionLine(deleteTarget.value.id)
-    ElMessage.success('删除成功')
-    showDeleteDialog.value = false
+    showMessage.success('删除成功')
     deleteTarget.value = null
     fetchLines()
   } catch (error: any) {
     console.error('删除产线失败:', error)
-    ElMessage.error(error.detail || '删除失败')
+    showMessage.error(error.detail || '删除失败')
   } finally {
     loading.value = false
   }

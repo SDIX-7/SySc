@@ -17,16 +17,24 @@
         </div>
         
         <div class="header-right">
-          <div class="chart-type-selector">
-            <label>控制图类型：</label>
-            <select v-model="selectedChartType" @change="fetchChartData">
-              <option value="U">U图 (单位缺陷数)</option>
-              <option value="P">P图 (不合格率)</option>
-              <option value="NP">NP图 (不合格数)</option>
-              <option value="C">C图 (缺陷数)</option>
-              <option v-if="line?.data_type === 'measurement'" value="XR">X-R图 (均值-极差)</option>
-              <option v-if="line?.data_type === 'measurement'" value="XS">X-s图 (均值-标准差)</option>
-            </select>
+          <div class="chart-controls">
+            <div class="chart-type-selector">
+              <label>控制图类型：</label>
+              <select v-model="selectedChartType" @change="onChartTypeChange">
+                <optgroup v-if="line?.data_type === 'measurement'" label="计量型控制图">
+                  <option value="XR">X-R图 (均值-极差)</option>
+                  <option value="XS">X-s图 (均值-标准差)</option>
+                  <option value="IMR">I-MR图 (单值-移动极差)</option>
+                  <option value="MEDIAN">中位数-极差图</option>
+                </optgroup>
+                <optgroup v-if="line?.data_type === 'attribute'" label="计数型控制图">
+                  <option value="P">P图 (不合格品率) - 样本量变化</option>
+                  <option value="NP">NP图 (不合格品数) - 样本量固定</option>
+                  <option value="C">C图 (缺陷数) - 检查单位固定</option>
+                  <option value="U">U图 (单位缺陷数) - 检查单位不固定</option>
+                </optgroup>
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -248,7 +256,22 @@
           </div>
         </div>
         
-        <div class="chart-container" v-if="hasData">
+        <div class="dual-chart-container" v-if="hasData && isDualChart">
+          <div class="chart-panel">
+            <h3 class="panel-title">{{ getXBarChartTitle() }}</h3>
+            <div class="chart-wrapper">
+              <canvas ref="xbarCanvas"></canvas>
+            </div>
+          </div>
+          <div class="chart-panel">
+            <h3 class="panel-title">{{ getVariationChartTitle() }}</h3>
+            <div class="chart-wrapper">
+              <canvas ref="variationCanvas"></canvas>
+            </div>
+          </div>
+        </div>
+        
+        <div class="chart-container single-chart" v-else-if="hasData">
           <canvas ref="chartCanvas"></canvas>
         </div>
         
@@ -297,9 +320,35 @@ const router = useRouter()
 const lineId = Number(route.params.id)
 const line = ref<ProductionLine | null>(null)
 const chartCanvas = ref<HTMLCanvasElement | null>(null)
+const xbarCanvas = ref<HTMLCanvasElement | null>(null)
+const variationCanvas = ref<HTMLCanvasElement | null>(null)
 const histogramCanvas = ref<HTMLCanvasElement | null>(null)
 const selectedChartType = ref('U')
+const subgroupSize = ref(5)
 const histogramBins = ref(10)
+
+const showSubgroupSelector = computed(() => {
+  return ['XR', 'XS', 'MEDIAN'].includes(selectedChartType.value)
+})
+
+const subgroupSizeOptions = computed(() => {
+  const chartType = selectedChartType.value
+  if (chartType === 'XR' || chartType === 'MEDIAN') {
+    return [2, 3, 4, 5, 6, 7, 8, 9]
+  } else if (chartType === 'XS') {
+    return [10, 11, 12, 13, 14, 15]
+  }
+  return []
+})
+
+const onChartTypeChange = () => {
+  if (selectedChartType.value === 'XR' || selectedChartType.value === 'MEDIAN') {
+    subgroupSize.value = 5
+  } else if (selectedChartType.value === 'XS') {
+    subgroupSize.value = 10
+  }
+  fetchChartData()
+}
 
 interface ChartData {
   ucl?: number
@@ -310,11 +359,16 @@ interface ChartData {
 }
 
 const chartData = ref<ChartData>({})
+const variationChartData = ref<ChartData>({})
 const abnormalPoints = ref(0)
 const alarms = ref<{ rule: string; description: string }[]>([])
 const rawData = ref<number[]>([])
 
 const hasData = computed(() => chartData.value.dataPoints && chartData.value.dataPoints!.length > 0)
+
+const isDualChart = computed(() => {
+  return ['XR', 'XS', 'IMR', 'MEDIAN'].includes(selectedChartType.value)
+})
 
 const meanValue = computed(() => {
   if (rawData.value.length === 0) return 0
@@ -357,62 +411,88 @@ const normalityResult = ref<NormalityResult>({
 
 const shapiroWilkTest = (data: number[]): NormalityResult => {
   const n = data.length
-  if (n < 3 || n > 5000) {
+  if (n < 3) {
     return { wStatistic: 0, pValue: 0, isNormal: false }
   }
   
   const sortedData = [...data].sort((a, b) => a - b)
   const mean = sortedData.reduce((a, b) => a + b, 0) / n
   
-  let s2 = 0
+  let ss = 0
   for (let i = 0; i < n; i++) {
-    s2 += Math.pow(sortedData[i] - mean, 2)
+    ss += Math.pow(sortedData[i] - mean, 2)
   }
   
-  const m = Math.floor(n / 2)
-  const a: number[] = new Array(m).fill(0)
-  
-  for (let i = 0; i < m; i++) {
-    a[i] = sortedData[n - 1 - i] - sortedData[i]
+  if (ss === 0) {
+    return { wStatistic: 1, pValue: 1, isNormal: true }
   }
   
-  let b2 = 0
-  for (let i = 0; i < m; i++) {
-    b2 += a[i] * a[i]
+  const m: number[] = []
+  for (let i = 1; i <= n; i++) {
+    m.push((n + 1) * (i - (n + 1) / 2) / n)
   }
   
-  const u = 1 / Math.sqrt(n)
-  const aCoeffs: number[] = []
+  const mmSum = m.reduce((acc, mi) => acc + mi * mi, 0)
   
-  for (let i = 0; i < m; i++) {
-    const expectedNormal = normalCDF((i + 1 - 0.375) / (n + 0.25))
-    aCoeffs.push(expectedNormal)
+  let b = 0
+  for (let i = 0; i < n; i++) {
+    b += m[i] * (sortedData[i] - mean)
+  }
+  b = b * b
+  
+  let w = b / (ss * mmSum)
+  
+  if (w > 1) w = 1
+  if (w < 0) w = 0
+  
+  let pValue: number
+  
+  if (n <= 50) {
+    const pValueTable: {[key: number]: [number, number]} = {
+      3: [0.7337, 0.0410], 4: [0.6288, 0.0884], 5: [0.5522, 0.1289],
+      6: [0.4827, 0.1436], 7: [0.4348, 0.1407], 8: [0.3926, 0.1386],
+      9: [0.3578, 0.1357], 10: [0.3294, 0.1330], 11: [0.3039, 0.1297],
+      12: [0.2815, 0.1257], 13: [0.2616, 0.1212], 14: [0.2438, 0.1165],
+      15: [0.2279, 0.1118], 16: [0.2135, 0.1071], 17: [0.2003, 0.1026],
+      18: [0.1882, 0.0982], 19: [0.1771, 0.0941], 20: [0.1669, 0.0902],
+      21: [0.1575, 0.0865], 22: [0.1488, 0.0830], 23: [0.1408, 0.0797],
+      24: [0.1334, 0.0766], 25: [0.1266, 0.0737], 26: [0.1203, 0.0709],
+      27: [0.1145, 0.0683], 28: [0.1092, 0.0658], 29: [0.1042, 0.0635],
+      30: [0.0996, 0.0613], 31: [0.0954, 0.0593], 32: [0.0915, 0.0574],
+      33: [0.0879, 0.0556], 34: [0.0845, 0.0540], 35: [0.0813, 0.0525],
+      36: [0.0784, 0.0511], 37: [0.0756, 0.0497], 38: [0.0730, 0.0484],
+      39: [0.0706, 0.0472], 40: [0.0683, 0.0461], 41: [0.0662, 0.0450],
+      42: [0.0642, 0.0440], 43: [0.0623, 0.0430], 44: [0.0605, 0.0421],
+      45: [0.0588, 0.0412], 46: [0.0572, 0.0404], 47: [0.0557, 0.0396],
+      48: [0.0543, 0.0388], 49: [0.0529, 0.0381], 50: [0.0516, 0.0374]
+    }
+    
+    if (pValueTable[n]) {
+      const [mu, sigma] = pValueTable[n]
+      const z = (w - mu) / sigma
+      pValue = 1 - normalCDF(z)
+    } else {
+      pValue = w >= 0.95 ? 0.5 : 0.1
+    }
+  } else {
+    if (w >= 0.99) pValue = 0.99
+    else if (w >= 0.97) pValue = 0.95
+    else if (w >= 0.94) pValue = 0.90
+    else if (w >= 0.90) pValue = 0.80
+    else if (w >= 0.85) pValue = 0.70
+    else if (w >= 0.80) pValue = 0.50
+    else if (w >= 0.75) pValue = 0.30
+    else if (w >= 0.70) pValue = 0.20
+    else if (w >= 0.65) pValue = 0.10
+    else if (w >= 0.60) pValue = 0.05
+    else pValue = 0.01
   }
   
-  let sumACoeffs2 = 0
-  for (let i = 0; i < m; i++) {
-    sumACoeffs2 += aCoeffs[i] * aCoeffs[i]
-  }
-  
-  const c = 1 / Math.sqrt(sumACoeffs2)
-  const aStar = aCoeffs.map(ai => c * ai)
-  
-  let numerator = 0
-  for (let i = 0; i < m; i++) {
-    numerator += aStar[i] * a[i]
-  }
-  
-  const w = (numerator * numerator) / s2
-  
-  const logW = Math.log(1 - w)
-  const mu = -1.2725 + 1.0521 * Math.log(n)
-  const sigma = 1.0308 - 0.26758 * Math.log(n)
-  const z = (logW - mu) / sigma
-  const pValue = 1 - normalCDF(z)
+  pValue = Math.max(0, Math.min(1, pValue))
   
   return {
     wStatistic: w,
-    pValue: Math.max(0, Math.min(1, pValue)),
+    pValue: pValue,
     isNormal: pValue >= 0.05
   }
 }
@@ -567,9 +647,31 @@ const getChartTypeName = (type: string) => {
     NP: 'NP图 - 不合格数控制图',
     C: 'C图 - 缺陷数控制图',
     XR: 'X-R图 - 均值-极差控制图',
-    XS: 'X-s图 - 均值-标准差控制图'
+    XS: 'X-s图 - 均值-标准差控制图',
+    IMR: 'I-MR图 - 单值-移动极差控制图',
+    MEDIAN: '中位数-极差控制图'
   }
   return map[type] || type
+}
+
+const getXBarChartTitle = () => {
+  const map: Record<string, string> = {
+    XR: 'X图 (均值控制图)',
+    XS: 'X图 (均值控制图)',
+    IMR: 'I图 (单值控制图)',
+    MEDIAN: '中位数控制图'
+  }
+  return map[selectedChartType.value] || '均值控制图'
+}
+
+const getVariationChartTitle = () => {
+  const map: Record<string, string> = {
+    XR: 'R图 (极差控制图)',
+    XS: 's图 (标准差控制图)',
+    IMR: 'MR图 (移动极差控制图)',
+    MEDIAN: 'R图 (极差控制图)'
+  }
+  return map[selectedChartType.value] || '变异控制图'
 }
 
 const fetchData = async () => {
@@ -577,7 +679,12 @@ const fetchData = async () => {
     const lineRes = await getProductionLine(lineId)
     line.value = lineRes as ProductionLine
     
-    if (line.value?.data_type === 'measurement') {
+    const dataType = line.value?.data_type
+    
+    if (dataType === 'measurement') {
+      if (!['XR', 'XS', 'IMR', 'MEDIAN'].includes(selectedChartType.value)) {
+        selectedChartType.value = 'XR'
+      }
       const measureRes = await getMeasurementData(lineId)
       const data = measureRes as MeasurementData[]
       
@@ -592,12 +699,15 @@ const fetchData = async () => {
         calculateMeasurementControlChart(data)
       }
     } else {
+      if (!['U', 'P', 'NP', 'C'].includes(selectedChartType.value)) {
+        selectedChartType.value = 'P'
+      }
       const attrRes = await getAttributeData(lineId)
       const data = attrRes as AttributeData[]
       
       if (data.length > 0) {
         rawData.value = data.map(d => d.defect_count)
-        calculateControlChart(data)
+        calculateAttributeControlChart(data)
       }
     }
   } catch (error) {
@@ -605,27 +715,224 @@ const fetchData = async () => {
   }
 }
 
-const calculateMeasurementControlChart = (data: MeasurementData[]) => {
-  const groupSize = 5
-  const maxGroups = 25
-  
-  const groups: number[][] = []
-  for (let i = 0; i < data.length; i += groupSize) {
-    const groupData = data.slice(i, i + groupSize)
-    const values: number[] = []
-    groupData.forEach(d => {
-      if (d.measurement_values) {
-        values.push(...d.measurement_values)
+const calculateMeasurementControlChart = async (data: MeasurementData[]) => {
+  if (selectedChartType.value === 'IMR') {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/production-lines/${lineId}/control-chart/IMR`,
+        {
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
+      
+      if (!response.ok) {
+        console.error('API请求失败:', response.status)
+        return
       }
-    })
-    if (values.length > 0) {
-      groups.push(values)
+      
+      const result = await response.json()
+      processIMRChartData(result)
+    } catch (error) {
+      console.error('获取控制图数据失败:', error)
     }
+    return
   }
   
-  const recentGroups = groups.slice(-maxGroups)
-  if (recentGroups.length === 0) return
+  const n = subgroupSize.value
   
+  try {
+    const response = await fetch(
+      `http://localhost:5000/api/production-lines/${lineId}/control-chart/${selectedChartType.value}?subgroup_size=${n}`,
+      {
+        headers: { 'Content-Type': 'application/json' }
+      }
+    )
+    
+    if (!response.ok) {
+      console.error('API请求失败:', response.status)
+      return
+    }
+    
+    const result = await response.json()
+    
+    if (result.xbar_chart && result.r_chart) {
+      const xbarData = result.xbar_chart
+      const rData = result.r_chart
+      
+      const xbarPoints = xbarData.data_points.map((v: number, i: number) => ({
+        x: i + 1,
+        y: v,
+        abnormal: (xbarData.abnormal_points || []).includes(i + 1)
+      }))
+      
+      const rPoints = rData.data_points.map((v: number, i: number) => ({
+        x: i + 1,
+        y: v,
+        abnormal: (rData.abnormal_points || []).includes(i + 1)
+      }))
+      
+      chartData.value = {
+        ucl: xbarData.ucl,
+        cl: xbarData.center_line,
+        lcl: xbarData.lcl,
+        center: xbarData.center_line,
+        dataPoints: xbarPoints
+      }
+      
+      variationChartData.value = {
+        ucl: rData.ucl,
+        cl: rData.center_line,
+        lcl: rData.lcl,
+        center: rData.center_line,
+        dataPoints: rPoints
+      }
+      
+      abnormalPoints.value = xbarPoints.filter((p: any) => p.abnormal).length + 
+                            rPoints.filter((p: any) => p.abnormal).length
+      
+      const allAbnormalities: any[] = []
+      if (xbarData.abnormal_points && xbarData.abnormal_points.length > 0) {
+        xbarData.abnormal_points.forEach((idx: number) => {
+          allAbnormalities.push({
+            rule: 'X图 - 超出控制限',
+            description: `第${idx}点超出X图控制限`
+          })
+        })
+      }
+      if (rData.abnormal_points && rData.abnormal_points.length > 0) {
+        rData.abnormal_points.forEach((idx: number) => {
+          allAbnormalities.push({
+            rule: 'R图 - 超出控制限',
+            description: `第${idx}点超出R图控制限`
+          })
+        })
+      }
+      alarms.value = allAbnormalities
+      
+      await nextTick()
+      drawDualCharts()
+    } else if (result.median_chart && result.r_chart) {
+      const medianData = result.median_chart
+      const rData = result.r_chart
+      
+      const medianPoints = medianData.data_points.map((v: number, i: number) => ({
+        x: i + 1,
+        y: v,
+        abnormal: (medianData.abnormal_points || []).includes(i + 1)
+      }))
+      
+      const rPoints = rData.data_points.map((v: number, i: number) => ({
+        x: i + 1,
+        y: v,
+        abnormal: (rData.abnormal_points || []).includes(i + 1)
+      }))
+      
+      chartData.value = {
+        ucl: medianData.ucl,
+        cl: medianData.center_line,
+        lcl: medianData.lcl,
+        center: medianData.center_line,
+        dataPoints: medianPoints
+      }
+      
+      variationChartData.value = {
+        ucl: rData.ucl,
+        cl: rData.center_line,
+        lcl: rData.lcl,
+        center: rData.center_line,
+        dataPoints: rPoints
+      }
+      
+      abnormalPoints.value = medianPoints.filter((p: any) => p.abnormal).length + 
+                            rPoints.filter((p: any) => p.abnormal).length
+      
+      const allAbnormalities: any[] = []
+      if (medianData.abnormal_points && medianData.abnormal_points.length > 0) {
+        medianData.abnormal_points.forEach((idx: number) => {
+          allAbnormalities.push({
+            rule: '中位数图 - 超出控制限',
+            description: `第${idx}点超出中位数图控制限`
+          })
+        })
+      }
+      if (rData.abnormal_points && rData.abnormal_points.length > 0) {
+        rData.abnormal_points.forEach((idx: number) => {
+          allAbnormalities.push({
+            rule: 'R图 - 超出控制限',
+            description: `第${idx}点超出R图控制限`
+          })
+        })
+      }
+      alarms.value = allAbnormalities
+      
+      await nextTick()
+      drawDualCharts()
+    }
+  } catch (error) {
+    console.error('获取控制图数据失败:', error)
+  }
+}
+
+const processIMRChartData = (result: any) => {
+  if (result.x_chart && result.mr_chart) {
+    const xData = result.x_chart
+    const mrData = result.mr_chart
+    
+    const xPoints = xData.data_points.map((v: number, i: number) => ({
+      x: i + 1,
+      y: v,
+      abnormal: (xData.abnormal_points || []).includes(i + 1)
+    }))
+    
+    const mrPoints = mrData.data_points.map((v: number, i: number) => ({
+      x: i + 1,
+      y: v,
+      abnormal: (mrData.abnormal_points || []).includes(i + 1)
+    }))
+    
+    chartData.value = {
+      ucl: xData.ucl,
+      cl: xData.center_line,
+      lcl: xData.lcl,
+      center: xData.center_line,
+      dataPoints: xPoints
+    }
+    
+    variationChartData.value = {
+      ucl: mrData.ucl,
+      cl: mrData.center_line,
+      lcl: mrData.lcl,
+      center: mrData.center_line,
+      dataPoints: mrPoints
+    }
+    
+    abnormalPoints.value = xPoints.filter((p: any) => p.abnormal).length + 
+                          mrPoints.filter((p: any) => p.abnormal).length
+    
+    const allAbnormalities: any[] = []
+    if (xData.abnormal_points && xData.abnormal_points.length > 0) {
+      xData.abnormal_points.forEach((idx: number) => {
+        allAbnormalities.push({
+          rule: 'I图 - 超出控制限',
+          description: `第${idx}点超出I图控制限`
+        })
+      })
+    }
+    if (mrData.abnormal_points && mrData.abnormal_points.length > 0) {
+      mrData.abnormal_points.forEach((idx: number) => {
+        allAbnormalities.push({
+          rule: 'MR图 - 超出控制限',
+          description: `第${idx}点超出MR图控制限`
+        })
+      })
+    }
+    alarms.value = allAbnormalities
+    
+    nextTick(() => drawDualCharts())
+  }
+}
+
+const fallbackCalculate = (recentGroups: number[][]) => {
   const xBars = recentGroups.map(g => g.reduce((a, b) => a + b, 0) / g.length)
   const ranges = recentGroups.map(g => Math.max(...g) - Math.min(...g))
   
@@ -637,27 +944,51 @@ const calculateMeasurementControlChart = (data: MeasurementData[]) => {
   const D3 = 0
   const D4 = 2.114
   
-  const ucl = xBar + A2 * rBar
-  const lcl = Math.max(0, xBar - A2 * rBar)
-  const cl = xBar
+  const xbarUcl = xBar + A2 * rBar
+  const xbarLcl = Math.max(0, xBar - A2 * rBar)
+  const xbarCl = xBar
   
-  const detectedAbnormalities = detectAbnormalities(xBars, cl, ucl, lcl)
-  const abnormalPointSet = new Set<number>()
-  detectedAbnormalities.forEach(a => a.points.forEach(p => abnormalPointSet.add(p)))
+  const rUcl = D4 * rBar
+  const rLcl = D3 * rBar
+  const rCl = rBar
   
-  const dataPoints = xBars.map((v, i) => ({
-    x: i + 1,
-    y: v,
-    abnormal: abnormalPointSet.has(i + 1)
-  }))
+  const xbarAbnormalities = detectAbnormalities(xBars, xbarCl, xbarUcl, xbarLcl)
+  const rAbnormalities = detectAbnormalities(ranges, rCl, rUcl, rLcl)
   
-  abnormalPoints.value = dataPoints.filter(p => p.abnormal).length
-  alarms.value = detectedAbnormalities.map(a => ({
-    rule: a.rule,
-    description: a.description
-  }))
+  const xbarAbnormalSet = new Set<number>()
+  xbarAbnormalities.forEach(a => a.points.forEach(p => xbarAbnormalSet.add(p)))
   
-  chartData.value = { ucl, cl, lcl, center: cl, dataPoints }
+  const rAbnormalSet = new Set<number>()
+  rAbnormalities.forEach(a => a.points.forEach(p => rAbnormalSet.add(p)))
+  
+  chartData.value = {
+    ucl: xbarUcl,
+    cl: xbarCl,
+    lcl: xbarLcl,
+    center: xbarCl,
+    dataPoints: xBars.map((v, i) => ({
+      x: i + 1,
+      y: v,
+      abnormal: xbarAbnormalSet.has(i + 1)
+    }))
+  }
+  
+  variationChartData.value = {
+    ucl: rUcl,
+    cl: rCl,
+    lcl: rLcl,
+    center: rCl,
+    dataPoints: ranges.map((v, i) => ({
+      x: i + 1,
+      y: v,
+      abnormal: rAbnormalSet.has(i + 1)
+    }))
+  }
+  
+  abnormalPoints.value = xbarAbnormalSet.size + rAbnormalSet.size
+  alarms.value = [...xbarAbnormalities, ...rAbnormalities]
+  
+  nextTick(() => drawDualCharts())
 }
 
 const calculateControlChart = (data: AttributeData[]) => {
@@ -876,8 +1207,14 @@ const drawChart = () => {
   const dataMax = Math.max(...dataPoints.map(p => p.y))
   const dataMin = Math.min(...dataPoints.map(p => p.y))
   
-  const maxY = Math.max(dataMax, ucl) * 1.1
-  const minY = Math.max(0, Math.min(dataMin, lcl) * 0.9)
+  const allYValues = [...dataPoints.map(p => p.y), ucl, lcl, cl]
+  const rawMin = Math.min(...allYValues)
+  const rawMax = Math.max(...allYValues)
+  const range = rawMax - rawMin || 1
+  const margin = range * 0.15
+  
+  const minY = rawMin - margin
+  const maxY = rawMax + margin
   const maxX = dataPoints.length
   
   const sigma = (ucl - cl) / 3
@@ -1002,14 +1339,178 @@ const drawChart = () => {
   
   ctx.fillStyle = '#ef4444'
   ctx.textAlign = 'left'
-  ctx.fillText(`UCL=${ucl.toFixed(2)}`, width - padding.right + 5, uclY + 4)
-  ctx.fillText(`LCL=${lcl.toFixed(2)}`, width - padding.right + 5, lclY + 4)
+  ctx.font = 'bold 12px "JetBrains Mono", monospace'
+  ctx.fillText(`UCL = ${ucl.toFixed(3)}`, padding.left + 10, uclY - 8)
+  ctx.fillText(`LCL = ${lcl.toFixed(3)}`, padding.left + 10, lclY + 16)
   ctx.fillStyle = '#22c55e'
-  ctx.fillText(`CL=${cl.toFixed(2)}`, width - padding.right + 5, clY + 4)
+  ctx.fillText(`CL = ${cl.toFixed(3)}`, padding.left + 10, clY - 8)
 }
 
 const fetchChartData = () => {
   fetchData()
+}
+
+const drawDualCharts = () => {
+  if (!xbarCanvas.value || !variationCanvas.value) return
+  
+  drawSingleChart(xbarCanvas.value, chartData.value, getXBarChartTitle())
+  drawSingleChart(variationCanvas.value, variationChartData.value, getVariationChartTitle())
+}
+
+const drawSingleChart = (canvas: HTMLCanvasElement, data: ChartData, title: string) => {
+  if (!canvas || !data.dataPoints || data.dataPoints.length === 0) return
+  
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+  
+  const dpr = window.devicePixelRatio || 1
+  const rect = canvas.getBoundingClientRect()
+  
+  if (rect.width === 0 || rect.height === 0) return
+  
+  canvas.width = rect.width * dpr
+  canvas.height = rect.height * dpr
+  ctx.scale(dpr, dpr)
+  
+  const width = rect.width
+  const height = rect.height
+  const padding = { top: 50, right: 40, bottom: 60, left: 70 }
+  const chartWidth = width - padding.left - padding.right
+  const chartHeight = height - padding.top - padding.bottom
+  
+  ctx.fillStyle = '#0a0e17'
+  ctx.fillRect(0, 0, width, height)
+  
+  ctx.fillStyle = '#f8fafc'
+  ctx.font = 'bold 14px "Orbitron", sans-serif'
+  ctx.textAlign = 'center'
+  ctx.fillText(title, width / 2, 25)
+  
+  const dataPoints = data.dataPoints
+  const ucl = data.ucl || 0
+  const lcl = data.lcl || 0
+  const cl = data.cl || data.center || 0
+  
+  const allYValues = [...dataPoints.map(p => p.y), ucl, lcl, cl]
+  const rawMin = Math.min(...allYValues)
+  const rawMax = Math.max(...allYValues)
+  const range = rawMax - rawMin || 1
+  const margin = range * 0.15
+  
+  const minY = rawMin - margin
+  const maxY = rawMax + margin
+  
+  const xScale = (x: number) => padding.left + (x / dataPoints.length) * chartWidth
+  const yScale = (y: number) => padding.top + chartHeight - ((y - minY) / (maxY - minY)) * chartHeight
+  
+  ctx.strokeStyle = '#1e293b'
+  ctx.lineWidth = 1
+  for (let i = 0; i <= 5; i++) {
+    const y = padding.top + (i / 5) * chartHeight
+    ctx.beginPath()
+    ctx.moveTo(padding.left, y)
+    ctx.lineTo(width - padding.right, y)
+    ctx.stroke()
+    
+    const value = maxY - (i / 5) * (maxY - minY)
+    ctx.fillStyle = '#64748b'
+    ctx.font = '11px "JetBrains Mono", monospace'
+    ctx.textAlign = 'right'
+    ctx.fillText(value.toFixed(3), padding.left - 8, y + 4)
+  }
+  
+  for (let i = 0; i < dataPoints.length; i++) {
+    const x = xScale(i + 0.5)
+    ctx.strokeStyle = '#1e293b'
+    ctx.beginPath()
+    ctx.moveTo(x, padding.top)
+    ctx.lineTo(x, padding.top + chartHeight)
+    ctx.stroke()
+    
+    if ((i + 1) % 5 === 0 || i === 0) {
+      ctx.fillStyle = '#64748b'
+      ctx.font = '11px "JetBrains Mono", monospace'
+      ctx.textAlign = 'center'
+      ctx.fillText(String(i + 1), x, padding.top + chartHeight + 20)
+    }
+  }
+  
+  const uclY = yScale(ucl)
+  const lclY = yScale(lcl)
+  const clY = yScale(cl)
+  
+  ctx.strokeStyle = '#ef4444'
+  ctx.lineWidth = 2
+  ctx.setLineDash([8, 4])
+  ctx.beginPath()
+  ctx.moveTo(padding.left, uclY)
+  ctx.lineTo(width - padding.right, uclY)
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.moveTo(padding.left, lclY)
+  ctx.lineTo(width - padding.right, lclY)
+  ctx.stroke()
+  
+  ctx.strokeStyle = '#22c55e'
+  ctx.setLineDash([])
+  ctx.beginPath()
+  ctx.moveTo(padding.left, clY)
+  ctx.lineTo(width - padding.right, clY)
+  ctx.stroke()
+  
+  ctx.fillStyle = '#ef4444'
+  ctx.font = 'bold 11px "JetBrains Mono", monospace'
+  ctx.textAlign = 'left'
+  ctx.fillText(`UCL = ${ucl.toFixed(3)}`, padding.left + 10, uclY - 8)
+  ctx.fillText(`LCL = ${lcl.toFixed(3)}`, padding.left + 10, lclY + 16)
+  ctx.fillStyle = '#22c55e'
+  ctx.fillText(`CL = ${cl.toFixed(3)}`, padding.left + 10, clY - 8)
+  
+  ctx.strokeStyle = '#0ea5e9'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  dataPoints.forEach((point, i) => {
+    const x = xScale(i + 0.5)
+    const y = yScale(point.y)
+    if (i === 0) {
+      ctx.moveTo(x, y)
+    } else {
+      ctx.lineTo(x, y)
+    }
+  })
+  ctx.stroke()
+  
+  dataPoints.forEach((point, i) => {
+    const x = xScale(i + 0.5)
+    const y = yScale(point.y)
+    
+    ctx.beginPath()
+    ctx.arc(x, y, 5, 0, Math.PI * 2)
+    
+    if (point.abnormal) {
+      ctx.fillStyle = '#ef4444'
+      ctx.fill()
+      ctx.strokeStyle = '#ef4444'
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.arc(x, y, 10, 0, Math.PI * 2)
+      ctx.stroke()
+    } else {
+      ctx.fillStyle = '#0ea5e9'
+      ctx.fill()
+    }
+  })
+  
+  ctx.fillStyle = '#64748b'
+  ctx.font = '12px "JetBrains Mono", monospace'
+  ctx.textAlign = 'center'
+  ctx.fillText('子组编号', width / 2, height - 15)
+  
+  ctx.save()
+  ctx.translate(15, height / 2)
+  ctx.rotate(-Math.PI / 2)
+  ctx.fillText('测量值', 0, 0)
+  ctx.restore()
 }
 
 const goBack = () => {
@@ -1100,6 +1601,34 @@ onMounted(() => {
   color: var(--text-primary);
   font-family: 'Orbitron', sans-serif;
   font-size: 0.875rem;
+}
+
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.subgroup-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.subgroup-selector label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.subgroup-selector select {
+  padding: 10px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.875rem;
+  min-width: 80px;
 }
 
 .stats-row {
@@ -1217,13 +1746,15 @@ onMounted(() => {
 
 .histogram-container {
   width: 100%;
-  height: 200px;
+  height: 350px;
   margin-bottom: 16px;
+  flex: 1;
 }
 
 .histogram-container canvas {
-  width: 100%;
-  height: 100%;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .histogram-stats {
@@ -1232,6 +1763,7 @@ onMounted(() => {
   gap: 12px;
   padding-top: 16px;
   border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .h-stat {
@@ -1455,9 +1987,54 @@ onMounted(() => {
   height: 400px;
 }
 
+.chart-container.single-chart {
+  height: 400px;
+}
+
 .chart-container canvas {
   width: 100%;
   height: 100%;
+}
+
+.dual-chart-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.chart-panel {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.panel-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), transparent);
+  border-bottom: 1px solid var(--border-color);
+  margin: 0;
+}
+
+.chart-wrapper {
+  height: 350px;
+  padding: 16px;
+}
+
+.chart-wrapper canvas {
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 1200px) {
+  .dual-chart-container {
+    grid-template-columns: 1fr;
+  }
 }
 
 .chart-empty {

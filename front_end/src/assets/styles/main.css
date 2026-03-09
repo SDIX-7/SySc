@@ -521,3 +521,53 @@ h1, h2, h3, h4, h5, h6 {
 .el-input-number__increase:hover {
   color: var(--accent-primary) !important;
 }
+
+.el-table {
+  --el-table-bg-color: var(--bg-secondary) !important;
+  --el-table-tr-bg-color: var(--bg-secondary) !important;
+  --el-table-header-bg-color: var(--bg-secondary) !important;
+  --el-table-header-text-color: var(--text-primary) !important;
+  --el-table-text-color: var(--text-primary) !important;
+  --el-table-row-hover-bg-color: rgba(0, 212, 255, 0.1) !important;
+  --el-table-current-row-bg-color: rgba(0, 212, 255, 0.15) !important;
+  --el-table-border-color: var(--border-color) !important;
+  background: var(--bg-secondary) !important;
+}
+
+.el-table th.el-table__cell {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.el-table td.el-table__cell {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.el-table--enable-row-hover .el-table__body tr:hover > td.el-table__cell {
+  background: rgba(0, 212, 255, 0.1) !important;
+}
+
+.el-table--striped .el-table__body tr.el-table__row--striped td.el-table__cell {
+  background: rgba(17, 24, 39, 0.9) !important;
+}
+
+.el-table__inner-wrapper::before {
+  display: none !important;
+}
+
+.el-table__empty-text {
+  color: var(--text-muted) !important;
+}
+
+.el-table .el-table__cell {
+  padding: 12px 0 !important;
+}
+
+.el-table__fixed-right::before,
+.el-table__fixed::before {
+  background-color: var(--border-color) !important;
+}

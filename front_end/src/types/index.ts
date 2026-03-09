@@ -235,3 +235,366 @@ export interface CapabilityValidation {
   data_out_spec: number
   percent_in_spec: number
 }
+
+// Control Plan Types
+export type PlanType = 'prototype' | 'pre-launch' | 'production'
+export type ControlPlanStatus = 'draft' | 'approved' | 'active' | 'obsolete'
+
+export interface ControlPlanItem {
+  id: number
+  control_plan_id: number
+  part_process_number?: string
+  process_name?: string
+  operation_description?: string
+  machine_device_jig_tools?: string
+  characteristic_no?: string
+  product_characteristic?: string
+  process_characteristic?: string
+  special_characteristic_class?: string
+  specification_tolerance?: string
+  evaluation_measurement_technique?: string
+  sample_size?: string
+  sample_frequency?: string
+  control_method?: string
+  reaction_plan?: string
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ControlPlanItemCreate {
+  part_process_number?: string
+  process_name?: string
+  operation_description?: string
+  machine_device_jig_tools?: string
+  characteristic_no?: string
+  product_characteristic?: string
+  process_characteristic?: string
+  special_characteristic_class?: string
+  specification_tolerance?: string
+  evaluation_measurement_technique?: string
+  sample_size?: string
+  sample_frequency?: string
+  control_method?: string
+  reaction_plan?: string
+  sort_order?: number
+}
+
+export interface ControlPlan {
+  id: number
+  line_id: number
+  plan_type: PlanType
+  control_plan_number?: string
+  part_number?: string
+  latest_change_level?: string
+  part_name?: string
+  part_description?: string
+  organization_plant?: string
+  organization_code?: string
+  key_contact?: string
+  key_contact_phone?: string
+  core_team?: string
+  org_approval_date?: string
+  org_approval_by?: string
+  other_approval_date?: string
+  other_approval_by?: string
+  date_orig?: string
+  date_rev?: string
+  customer_eng_approval_date?: string
+  customer_eng_approval_by?: string
+  customer_quality_approval_date?: string
+  customer_quality_approval_by?: string
+  page_number?: number
+  total_pages?: number
+  version: string
+  status: ControlPlanStatus
+  created_by?: string
+  created_at: string
+  updated_at: string
+  items?: ControlPlanItem[]
+}
+
+export interface ControlPlanCreate {
+  line_id: number
+  plan_type?: PlanType
+  control_plan_number?: string
+  part_number?: string
+  latest_change_level?: string
+  part_name?: string
+  part_description?: string
+  organization_plant?: string
+  organization_code?: string
+  key_contact?: string
+  key_contact_phone?: string
+  core_team?: string
+  org_approval_date?: string
+  org_approval_by?: string
+  other_approval_date?: string
+  other_approval_by?: string
+  date_orig?: string
+  date_rev?: string
+  customer_eng_approval_date?: string
+  customer_eng_approval_by?: string
+  customer_quality_approval_date?: string
+  customer_quality_approval_by?: string
+  page_number?: number
+  total_pages?: number
+  version?: string
+  status?: ControlPlanStatus
+  created_by?: string
+  items?: ControlPlanItemCreate[]
+}
+
+export interface ControlPlanUpdate {
+  plan_type?: PlanType
+  control_plan_number?: string
+  part_number?: string
+  latest_change_level?: string
+  part_name?: string
+  part_description?: string
+  organization_plant?: string
+  organization_code?: string
+  key_contact?: string
+  key_contact_phone?: string
+  core_team?: string
+  org_approval_date?: string
+  org_approval_by?: string
+  other_approval_date?: string
+  other_approval_by?: string
+  date_orig?: string
+  date_rev?: string
+  customer_eng_approval_date?: string
+  customer_eng_approval_by?: string
+  customer_quality_approval_date?: string
+  customer_quality_approval_by?: string
+  page_number?: number
+  total_pages?: number
+  version?: string
+  status?: ControlPlanStatus
+}
+
+// OCAP Types
+export type SignalType = 'point_beyond_3sigma' | 'run_9' | 'trend_6' | 'zone_2of3' | 'zone_4of5' | 'run_8' | 'run_6' | 'run_14' | 'run_15'
+export type OCAPPriority = 'critical' | 'high' | 'medium' | 'low'
+export type OCAPStatus = 'draft' | 'active' | 'executing' | 'completed' | 'closed'
+export type OCAPPhase = 'containment' | 'investigation' | 'correction' | 'verification'
+export type ActionType = 'immediate' | 'short_term' | 'long_term'
+export type ExecutionStatus = 'pending' | 'in_progress' | 'completed' | 'skipped' | 'failed'
+export type AnalysisMethod = '5whys' | 'fishbone' | 'pareto' | 'fta'
+export type CorrectiveActionType = 'temporary' | 'permanent'
+export type CorrectiveActionStatus = 'planned' | 'in_progress' | 'completed' | 'verified'
+export type ProductDisposition = 'release' | 'rework' | 'scrap' | 'concession'
+
+export interface OCAPSignal {
+  id: number
+  ocap_id: number
+  signal_time?: string
+  signal_type?: SignalType
+  signal_value?: string
+  control_limit_value?: string
+  subgroup_index?: number
+  raw_data_snapshot?: Record<string, any>
+  chart_snapshot_url?: string
+  detected_by: string
+  created_at: string
+}
+
+export interface OCAPSignalCreate {
+  signal_time?: string
+  signal_type?: SignalType
+  signal_value?: string
+  control_limit_value?: string
+  subgroup_index?: number
+  raw_data_snapshot?: Record<string, any>
+  chart_snapshot_url?: string
+  detected_by?: string
+}
+
+export interface OCAPStep {
+  id: number
+  ocap_id: number
+  phase: OCAPPhase
+  step_number: number
+  action_type: ActionType
+  action_description?: string
+  responsible_role?: string
+  responsible_person?: string
+  expected_duration_minutes?: number
+  deadline?: string
+  is_mandatory: boolean
+  prerequisites?: number[]
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface OCAPStepCreate {
+  phase?: OCAPPhase
+  step_number?: number
+  action_type?: ActionType
+  action_description?: string
+  responsible_role?: string
+  responsible_person?: string
+  expected_duration_minutes?: number
+  deadline?: string
+  is_mandatory?: boolean
+  prerequisites?: number[]
+  sort_order?: number
+}
+
+export interface OCAPStepUpdate extends OCAPStepCreate {}
+
+export interface OCAPExecution {
+  id: number
+  ocap_id: number
+  step_id?: number
+  status: ExecutionStatus
+  started_at?: string
+  completed_at?: string
+  executed_by?: string
+  notes?: string
+  evidence_urls?: string[]
+  containment_action_taken?: string
+  product_disposition?: ProductDisposition
+  created_at: string
+  updated_at: string
+}
+
+export interface OCAPExecutionCreate {
+  step_id?: number
+  status?: ExecutionStatus
+  started_at?: string
+  completed_at?: string
+  executed_by?: string
+  notes?: string
+  evidence_urls?: string[]
+  containment_action_taken?: string
+  product_disposition?: ProductDisposition
+}
+
+export interface OCAPExecutionUpdate extends OCAPExecutionCreate {}
+
+export interface OCAPRootCause {
+  id: number
+  ocap_id: number
+  analysis_method: AnalysisMethod
+  why_1?: string
+  why_2?: string
+  why_3?: string
+  why_4?: string
+  why_5?: string
+  fishbone_category?: string
+  root_cause_description?: string
+  contributing_factors?: string[]
+  evidence_collected?: Record<string, any>
+  verified: boolean
+  verified_by?: string
+  verified_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface OCAPRootCauseCreate {
+  analysis_method?: AnalysisMethod
+  why_1?: string
+  why_2?: string
+  why_3?: string
+  why_4?: string
+  why_5?: string
+  fishbone_category?: string
+  root_cause_description?: string
+  contributing_factors?: string[]
+  evidence_collected?: Record<string, any>
+  verified?: boolean
+  verified_by?: string
+  verified_at?: string
+}
+
+export interface OCAPRootCauseUpdate extends OCAPRootCauseCreate {}
+
+export interface OCAPCorrectiveAction {
+  id: number
+  ocap_id: number
+  root_cause_id?: number
+  action_description?: string
+  action_type: CorrectiveActionType
+  responsible_person?: string
+  target_date?: string
+  actual_date?: string
+  effectiveness_verified: boolean
+  verification_method?: string
+  verification_result?: string
+  status: CorrectiveActionStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface OCAPCorrectiveActionCreate {
+  root_cause_id?: number
+  action_description?: string
+  action_type?: CorrectiveActionType
+  responsible_person?: string
+  target_date?: string
+  actual_date?: string
+  effectiveness_verified?: boolean
+  verification_method?: string
+  verification_result?: string
+  status?: CorrectiveActionStatus
+}
+
+export interface OCAPCorrectiveActionUpdate extends OCAPCorrectiveActionCreate {}
+
+export interface OCAP {
+  id: number
+  control_chart_config_id?: number
+  line_id?: number
+  name: string
+  description?: string
+  signal_type?: SignalType
+  priority: OCAPPriority
+  severity_score: number
+  scope_score: number
+  trend_score: number
+  overall_priority_score: number
+  status: OCAPStatus
+  is_active: boolean
+  created_by?: string
+  created_at: string
+  updated_at: string
+  signals?: OCAPSignal[]
+  steps?: OCAPStep[]
+  executions?: OCAPExecution[]
+  root_causes?: OCAPRootCause[]
+  corrective_actions?: OCAPCorrectiveAction[]
+}
+
+export interface OCAPCreate {
+  control_chart_config_id?: number
+  line_id?: number
+  name: string
+  description?: string
+  signal_type?: SignalType
+  priority?: OCAPPriority
+  severity_score?: number
+  scope_score?: number
+  trend_score?: number
+  overall_priority_score?: number
+  status?: OCAPStatus
+  is_active?: boolean
+  created_by?: string
+  signals?: OCAPSignalCreate[]
+  steps?: OCAPStepCreate[]
+}
+
+export interface OCAPUpdate {
+  name?: string
+  description?: string
+  signal_type?: SignalType
+  priority?: OCAPPriority
+  severity_score?: number
+  scope_score?: number
+  trend_score?: number
+  overall_priority_score?: number
+  status?: OCAPStatus
+  is_active?: boolean
+}

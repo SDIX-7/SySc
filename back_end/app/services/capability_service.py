@@ -273,6 +273,7 @@ def calculate_capability_from_raw_values(
     usl: float,
     lsl: float,
     target: Optional[float] = None,
+    sigma_machine: Optional[float] = None,
     is_grouped: bool = False,
     subgroup_size: int = 5
 ) -> Dict:
@@ -287,10 +288,92 @@ def calculate_capability_from_raw_values(
                 data_groups.append(group)
         if not data_groups:
             raise ValueError("无法形成有效的数据组")
+        return calculate_capability_indices(data_groups, usl, lsl, target, sigma_machine)
     else:
-        data_groups = [[v] for v in values]
-    
-    return calculate_capability_indices(data_groups, usl, lsl, target)
+        mean = calculate_mean(values)
+        sigma_overall = calculate_sigma_overall(values)
+        
+        cp = calculate_cp(usl, lsl, sigma_overall)
+        cpk = calculate_cpk(usl, lsl, mean, sigma_overall)
+        pp = calculate_pp(usl, lsl, sigma_overall)
+        ppk = calculate_ppk(usl, lsl, mean, sigma_overall)
+        
+        cm = None
+        cmk = None
+        if sigma_machine is not None and sigma_machine > 0:
+            cm = calculate_cm(usl, lsl, sigma_machine)
+            cmk = calculate_cmk(usl, lsl, mean, sigma_machine)
+        
+        cp_evaluation = evaluate_capability_index(cp)
+        cpk_evaluation = evaluate_capability_index(cpk)
+        pp_evaluation = evaluate_capability_index(pp)
+        ppk_evaluation = evaluate_capability_index(ppk)
+        
+        if cmk is not None:
+            cmk_evaluation = evaluate_capability_index(cmk)
+        else:
+            cmk_evaluation = None
+        
+        normality_result = test_normality(values)
+        
+        if target is None:
+            target = (usl + lsl) / 2
+        
+        ca = (mean - target) / ((usl - lsl) / 2) * 100 if (usl - lsl) > 0 else 0
+        
+        return {
+            'usl': usl,
+            'lsl': lsl,
+            'target': target,
+            'mean': mean,
+            'sigma_within': sigma_overall,
+            'sigma_overall': sigma_overall,
+            'sigma_machine': sigma_machine,
+            'indices': {
+                'cp': {
+                    'value': round(cp, 4),
+                    'formula': '(USL - LSL) / (6 * σ)',
+                    'evaluation': cp_evaluation
+                },
+                'cpk': {
+                    'value': round(cpk, 4),
+                    'formula': 'min[(USL - μ) / (3 * σ), (μ - LSL) / (3 * σ)]',
+                    'evaluation': cpk_evaluation
+                },
+                'pp': {
+                    'value': round(pp, 4),
+                    'formula': '(USL - LSL) / (6 * σ)',
+                    'evaluation': pp_evaluation
+                },
+                'ppk': {
+                    'value': round(ppk, 4),
+                    'formula': 'min[(USL - μ) / (3 * σ), (μ - LSL) / (3 * σ)]',
+                    'evaluation': ppk_evaluation
+                },
+                'cm': {
+                    'value': round(cm, 4) if cm is not None else None,
+                    'formula': '(USL - LSL) / (6 * σ_machine)' if cm is not None else None,
+                    'evaluation': None
+                },
+                'cmk': {
+                    'value': round(cmk, 4) if cmk is not None else None,
+                    'formula': 'min[(USL - μ) / (3 * σ_machine), (μ - LSL) / (3 * σ_machine)]' if cmk is not None else None,
+                    'evaluation': cmk_evaluation
+                }
+            },
+            'additional_metrics': {
+                'ca': round(ca, 2),
+                'ca_evaluation': '偏高' if ca > 2.5 else ('偏低' if ca < -2.5 else '正常')
+            },
+            'data_statistics': {
+                'total_samples': len(values),
+                'subgroup_count': 1,
+                'avg_subgroup_size': len(values)
+            },
+            'normality_test': normality_result,
+            'data_values': values,
+            'message': '能力指数计算成功'
+        }
 
 
 def validate_specification_limits(usl: float, lsl: float, values: List[float]) -> Dict:
@@ -298,25 +381,21 @@ def validate_specification_limits(usl: float, lsl: float, values: List[float]) -
     min_val = min(values)
     max_val = max(values)
     
+    errors = []
     warnings = []
     
     if usl <= lsl:
-        warnings.append("规格上限必须大于规格下限")
-    
-    if mean > usl:
-        warnings.append(f"数据均值({mean:.4f})超过规格上限({usl})")
-    
-    if mean < lsl:
-        warnings.append(f"数据均值({mean:.4f})低于规格下限({lsl})")
+        errors.append("规格上限必须大于规格下限")
     
     if max_val > usl:
-        warnings.append(f"数据最大值({max_val:.4f})超过规格上限({usl})")
+        warnings.append(f"数据最大值({max_val:.4f})超过规格上限({usl})，将影响Cpk值")
     
     if min_val < lsl:
-        warnings.append(f"数据最小值({min_val:.4f})低于规格下限({lsl})")
+        warnings.append(f"数据最小值({min_val:.4f})低于规格下限({lsl})，将影响Cpk值")
     
     return {
-        'valid': len(warnings) == 0,
+        'valid': len(errors) == 0,
+        'errors': errors,
         'warnings': warnings,
         'data_range': {
             'min': min_val,

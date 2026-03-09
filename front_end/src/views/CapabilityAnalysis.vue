@@ -156,9 +156,17 @@
               <span class="status-badge" :class="getStatusClass(parseFloat(item.cpk || '0'))">
                 {{ getStatusText(parseFloat(item.cpk || '0')) }}
               </span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="9 18 15 12 9 6"/>
-              </svg>
+              <div class="card-actions">
+                <button class="btn-delete" @click.stop="handleDelete(item.id)" title="删除">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </div>
             </div>
           </div>
         </div>
@@ -181,8 +189,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import Menu from '@/components/Menu.vue'
-import { getProductionLine, getCapabilityAnalyses } from '@/api'
+import { getProductionLine, getCapabilityAnalyses, deleteCapabilityAnalysis } from '@/api'
+import { showDeleteConfirm, showMessage } from '@/utils/dialog'
 import type { ProductionLine, CapabilityAnalysis } from '@/types'
 
 const route = useRoute()
@@ -260,6 +270,13 @@ const fetchData = async () => {
     ])
     
     line.value = lineRes as ProductionLine
+    
+    if (line.value?.data_type === 'attribute') {
+      ElMessage.warning('计数型数据产线不支持过程能力分析')
+      router.push(`/production-lines/${lineId}`)
+      return
+    }
+    
     analyses.value = analysesRes as CapabilityAnalysis[]
   } catch (error) {
     console.error('获取数据失败:', error)
@@ -268,6 +285,21 @@ const fetchData = async () => {
 
 const viewDetail = (id: number) => {
   router.push(`/capability-analysis/${id}`)
+}
+
+const handleDelete = async (id: number) => {
+  try {
+    await showDeleteConfirm('此分析记录')
+    
+    await deleteCapabilityAnalysis(id)
+    showMessage.success('删除成功')
+    fetchData()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      showMessage.error('删除失败')
+    }
+  }
 }
 
 const goBack = () => {
@@ -574,6 +606,32 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-delete {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 .status-badge {

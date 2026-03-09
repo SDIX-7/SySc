@@ -9,7 +9,10 @@ from .database import engine, Base, SessionLocal
 from .models.models import (
     Image, EmailSettings, User, 
     ProductionLine, MeasurementData, AttributeData,
-    ControlChartConfig, SamplingPlan, SamplingRecord, CapabilityAnalysis
+    ControlChartConfig, SamplingPlan, SamplingRecord, CapabilityAnalysis,
+    ControlPlan, ControlPlanItem,
+    OCAP, OCAPSignal, OCAPStep, OCAPExecution, OCAPRootCause, OCAPCorrectiveAction,
+    MSAStudy, MSAPart, MSAOperator, MSAMeasurement, MSAResult
 )
 from .routers import api
 

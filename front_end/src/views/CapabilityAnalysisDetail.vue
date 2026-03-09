@@ -16,8 +16,18 @@
           </div>
         </div>
         <div class="header-right">
-          <div class="analysis-type-badge" :class="analysis.analysis_type">
-            {{ getAnalysisTypeText(analysis.analysis_type) }}
+          <div class="action-buttons">
+            <button class="btn-export" @click="exportReport" title="导出报告">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              导出报告
+            </button>
+            <div class="analysis-type-badge" :class="analysis.analysis_type">
+              {{ getAnalysisTypeText(analysis.analysis_type) }}
+            </div>
           </div>
         </div>
       </div>
@@ -314,7 +324,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { showMessage } from '@/utils/dialog'
 import * as echarts from 'echarts'
 import Menu from '@/components/Menu.vue'
 import { getCapabilityAnalysis } from '@/api'
@@ -407,19 +417,80 @@ const fetchAnalysis = async () => {
     analysis.value = result as CapabilityAnalysisResult
     
     if ((result as any).indices) {
-      indices.value = (result as any).indices
+      const rawIndices = (result as any).indices
+      indices.value = {
+        cp: {
+          value: rawIndices.cp?.value,
+          rating: rawIndices.cp?.evaluation?.level_text || '',
+          rating_class: rawIndices.cp?.evaluation?.level || '',
+          color: getColorForLevel(rawIndices.cp?.evaluation?.level)
+        },
+        cpk: {
+          value: rawIndices.cpk?.value,
+          rating: rawIndices.cpk?.evaluation?.level_text || '',
+          rating_class: rawIndices.cpk?.evaluation?.level || '',
+          color: getColorForLevel(rawIndices.cpk?.evaluation?.level)
+        },
+        pp: {
+          value: rawIndices.pp?.value,
+          rating: rawIndices.pp?.evaluation?.level_text || '',
+          rating_class: rawIndices.pp?.evaluation?.level || '',
+          color: getColorForLevel(rawIndices.pp?.evaluation?.level)
+        },
+        ppk: {
+          value: rawIndices.ppk?.value,
+          rating: rawIndices.ppk?.evaluation?.level_text || '',
+          rating_class: rawIndices.ppk?.evaluation?.level || '',
+          color: getColorForLevel(rawIndices.ppk?.evaluation?.level)
+        },
+        cm: rawIndices.cm?.value ? {
+          value: rawIndices.cm.value,
+          rating: '',
+          rating_class: '',
+          color: ''
+        } : null,
+        cmk: rawIndices.cmk?.value ? {
+          value: rawIndices.cmk.value,
+          rating: rawIndices.cmk?.evaluation?.level_text || '',
+          rating_class: rawIndices.cmk?.evaluation?.level || '',
+          color: getColorForLevel(rawIndices.cmk?.evaluation?.level)
+        } : null
+      }
+    }
+    
+    if ((result as any).data_statistics) {
+      const stats = (result as any).data_statistics
+      analysis.value.sample_count = stats.total_samples
+      analysis.value.subgroup_count = stats.subgroup_count
     }
     
     if ((result as any).normality_test) {
-      normalityTest.value = (result as any).normality_test
+      const nt = (result as any).normality_test
+      normalityTest.value = {
+        is_normal: nt.is_normal,
+        test_name: nt.test || 'Shapiro-Wilk',
+        p_value: nt.p_value,
+        statistic: nt.statistic,
+        interpretation: nt.interpretation
+      }
     }
     
     await nextTick()
     renderHistogram()
   } catch (error) {
     console.error('获取分析数据失败:', error)
-    ElMessage.error('获取分析数据失败')
+    showMessage.error('获取分析数据失败')
   }
+}
+
+const getColorForLevel = (level?: string) => {
+  const colors: Record<string, string> = {
+    'excellent': '#10b981',
+    'good': '#3b82f6',
+    'marginal': '#f59e0b',
+    'poor': '#ef4444'
+  }
+  return colors[level || ''] || '#94a3b8'
 }
 
 const renderHistogram = () => {
@@ -569,6 +640,138 @@ const goBack = () => {
   router.back()
 }
 
+const exportReport = () => {
+  if (!analysis.value) return
+  
+  const reportContent = generateReportContent()
+  const blob = new Blob([reportContent], { type: 'text/html;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `能力分析报告_${analysis.value.analysis_name || analysis.value.id}_${new Date().toISOString().split('T')[0]}.html`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+  
+  showMessage.success('报告已导出')
+}
+
+const generateReportContent = () => {
+  if (!analysis.value || !indices.value) return ''
+  
+  const a = analysis.value
+  const idx = indices.value
+  
+  return `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>能力分析报告 - ${a.analysis_name || `分析 #${a.id}`}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Microsoft YaHei', sans-serif; background: #f8fafc; color: #1e293b; padding: 40px; }
+    .report-container { max-width: 900px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); overflow: hidden; }
+    .report-header { background: linear-gradient(135deg, #0ea5e9, #0284c7); color: white; padding: 32px; }
+    .report-header h1 { font-size: 24px; margin-bottom: 8px; }
+    .report-header p { opacity: 0.9; font-size: 14px; }
+    .report-body { padding: 32px; }
+    .section { margin-bottom: 32px; }
+    .section-title { font-size: 18px; font-weight: 600; color: #0f172a; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+    .indices-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .index-card { padding: 20px; background: #f8fafc; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0; }
+    .index-card.excellent { border-color: #10b981; background: #ecfdf5; }
+    .index-card.good { border-color: #3b82f6; background: #eff6ff; }
+    .index-card.fair { border-color: #f59e0b; background: #fffbeb; }
+    .index-card.poor { border-color: #ef4444; background: #fef2f2; }
+    .index-name { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+    .index-value { font-size: 28px; font-weight: 700; }
+    .index-card.excellent .index-value { color: #10b981; }
+    .index-card.good .index-value { color: #3b82f6; }
+    .index-card.fair .index-value { color: #f59e0b; }
+    .index-card.poor .index-value { color: #ef4444; }
+    .specs-table { width: 100%; border-collapse: collapse; }
+    .specs-table td { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; }
+    .specs-table td:first-child { color: #64748b; width: 200px; }
+    .specs-table td:last-child { font-weight: 600; font-family: monospace; }
+    .evaluation-box { padding: 24px; border-radius: 8px; border: 2px solid; }
+    .evaluation-box.excellent { border-color: #10b981; background: #ecfdf5; }
+    .evaluation-box.good { border-color: #3b82f6; background: #eff6ff; }
+    .evaluation-box.fair { border-color: #f59e0b; background: #fffbeb; }
+    .evaluation-box.poor { border-color: #ef4444; background: #fef2f2; }
+    .evaluation-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+    .evaluation-desc { color: #475569; line-height: 1.6; }
+    .report-footer { padding: 24px 32px; background: #f8fafc; text-align: center; color: #64748b; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="report-container">
+    <div class="report-header">
+      <h1>${a.analysis_name || `能力分析报告 #${a.id}`}</h1>
+      <p>分析时间: ${formatTime(a.analysis_time)} | 分析类型: ${getAnalysisTypeText(a.analysis_type)}</p>
+    </div>
+    <div class="report-body">
+      <div class="section">
+        <h2 class="section-title">能力指数</h2>
+        <div class="indices-grid">
+          <div class="index-card ${getIndexClass(idx.cpk?.value)}">
+            <div class="index-name">Cpk (过程能力指数)</div>
+            <div class="index-value">${idx.cpk?.value?.toFixed(3) || '–'}</div>
+          </div>
+          <div class="index-card ${getIndexClass(idx.cp?.value)}">
+            <div class="index-name">Cp (潜在过程能力)</div>
+            <div class="index-value">${idx.cp?.value?.toFixed(3) || '–'}</div>
+          </div>
+          <div class="index-card ${getIndexClass(idx.ppk?.value)}">
+            <div class="index-name">Ppk (过程绩效指数)</div>
+            <div class="index-value">${idx.ppk?.value?.toFixed(3) || '–'}</div>
+          </div>
+          <div class="index-card ${getIndexClass(idx.pp?.value)}">
+            <div class="index-name">Pp (潜在过程绩效)</div>
+            <div class="index-value">${idx.pp?.value?.toFixed(3) || '–'}</div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <h2 class="section-title">规格信息</h2>
+        <table class="specs-table">
+          <tr><td>规格上限 (USL)</td><td>${parseFloat(a.usl).toFixed(4)}</td></tr>
+          <tr><td>目标值 (Target)</td><td>${a.target ? parseFloat(a.target).toFixed(4) : '–'}</td></tr>
+          <tr><td>规格下限 (LSL)</td><td>${parseFloat(a.lsl).toFixed(4)}</td></tr>
+          <tr><td>过程均值 (μ)</td><td>${parseFloat(a.mean).toFixed(4)}</td></tr>
+          <tr><td>组内标准差 (σ_within)</td><td>${parseFloat(a.sigma_within).toFixed(4)}</td></tr>
+          <tr><td>整体标准差 (σ_overall)</td><td>${parseFloat(a.sigma_overall).toFixed(4)}</td></tr>
+        </table>
+      </div>
+      <div class="section">
+        <h2 class="section-title">数据统计</h2>
+        <table class="specs-table">
+          <tr><td>样本数量</td><td>${a.sample_count}</td></tr>
+          <tr><td>子组数量</td><td>${a.subgroup_count}</td></tr>
+          <tr><td>最小值</td><td>${minValue.value.toFixed(4)}</td></tr>
+          <tr><td>最大值</td><td>${maxValue.value.toFixed(4)}</td></tr>
+          <tr><td>极差</td><td>${rangeValue.value.toFixed(4)}</td></tr>
+        </table>
+      </div>
+      <div class="section">
+        <h2 class="section-title">能力评价</h2>
+        <div class="evaluation-box ${overallEvaluation.value.class}">
+          <div class="evaluation-title">${overallEvaluation.value.title}</div>
+          <div class="evaluation-desc">${overallEvaluation.value.description}</div>
+        </div>
+      </div>
+    </div>
+    <div class="report-footer">
+      报告生成时间: ${new Date().toLocaleString('zh-CN')}
+    </div>
+  </div>
+</body>
+</html>
+  `
+}
+
 onMounted(() => {
   fetchAnalysis()
 })
@@ -611,6 +814,33 @@ onMounted(() => {
 .btn-back:hover {
   border-color: var(--accent-primary);
   color: var(--accent-primary);
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.btn-export {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--accent-primary), #0284c7);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: white;
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-export:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
 }
 
 .page-title {

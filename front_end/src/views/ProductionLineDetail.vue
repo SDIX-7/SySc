@@ -212,6 +212,90 @@
               </div>
             </div>
           </div>
+          
+          <div v-if="activeTab === 'control-plan'" class="tab-panel">
+            <div class="panel-header">
+              <h3 class="panel-title">控制计划</h3>
+              <button class="btn-secondary" @click="goToControlPlans">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                查看控制计划
+              </button>
+            </div>
+            
+            <div v-if="controlPlans.length > 0" class="control-plans-list">
+              <div v-for="plan in controlPlans" :key="plan.id" class="plan-card" @click="viewControlPlan(plan)">
+                <div class="plan-header">
+                  <span class="plan-number">{{ plan.control_plan_number }}</span>
+                  <el-tag :type="getPlanTypeTag(plan.plan_type)" size="small">
+                    {{ getPlanTypeText(plan.plan_type) }}
+                  </el-tag>
+                  <span class="status-badge" :class="plan.status">{{ getStatusText(plan.status) }}</span>
+                </div>
+                <div class="plan-body">
+                  <div class="plan-info">
+                    <span class="label">零件号</span>
+                    <span class="value">{{ plan.part_number || '–' }}</span>
+                  </div>
+                  <div class="plan-info">
+                    <span class="label">零件名称</span>
+                    <span class="value">{{ plan.part_name || '–' }}</span>
+                  </div>
+                  <div class="plan-info">
+                    <span class="label">版本</span>
+                    <span class="value">v{{ plan.version }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="empty-list">
+              <p>暂无控制计划</p>
+              <p class="hint">点击上方按钮创建控制计划</p>
+            </div>
+          </div>
+          
+          <div v-if="activeTab === 'ocap'" class="tab-panel">
+            <div class="panel-header">
+              <h3 class="panel-title">OCAP (失控行动计划)</h3>
+              <button class="btn-secondary" @click="goToOCAPs">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                查看 OCAP
+              </button>
+            </div>
+            
+            <div v-if="ocaps.length > 0" class="ocaps-list">
+              <div v-for="ocap in ocaps" :key="ocap.id" class="ocap-card" @click="viewOCAP(ocap)">
+                <div class="ocap-header">
+                  <span class="ocap-name">{{ ocap.name }}</span>
+                  <span class="priority-badge" :class="ocap.priority">{{ getPriorityText(ocap.priority) }}</span>
+                  <span class="status-badge" :class="ocap.status">{{ getOcapStatusText(ocap.status) }}</span>
+                </div>
+                <div class="ocap-body">
+                  <div class="ocap-info">
+                    <span class="label">描述</span>
+                    <span class="value">{{ ocap.description || '–' }}</span>
+                  </div>
+                  <div class="ocap-info">
+                    <span class="label">优先级评分</span>
+                    <span class="value score">{{ ocap.overall_priority_score }}/10</span>
+                  </div>
+                  <div class="ocap-info">
+                    <span class="label">激活状态</span>
+                    <span class="value">{{ ocap.is_active ? '已激活' : '未激活' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="empty-list">
+              <p>暂无 OCAP</p>
+              <p class="hint">点击上方按钮创建 OCAP</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -301,7 +385,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import Menu from '@/components/Menu.vue'
@@ -312,9 +396,11 @@ import {
   getSamplingPlans,
   createAttributeData,
   createMeasurementData,
-  createSamplingPlan 
+  createSamplingPlan
 } from '@/api'
-import type { ProductionLine, AttributeData, MeasurementData, SamplingPlan } from '@/types'
+import { getControlPlans } from '@/api/controlPlan'
+import { getOCAPs } from '@/api/ocap'
+import type { ProductionLine, AttributeData, MeasurementData, SamplingPlan, ControlPlan, OCAP } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -323,9 +409,11 @@ const line = ref<ProductionLine | null>(null)
 const attributeData = ref<AttributeData[]>([])
 const measurementData = ref<MeasurementData[]>([])
 const samplingPlans = ref<SamplingPlan[]>([])
+const controlPlans = ref<ControlPlan[]>([])
+const ocaps = ref<OCAP[]>([])
 const loading = ref(false)
 
-const activeTab = ref('data')
+const activeTab = ref(route.query.tab as string || 'data')
 const dataType = ref('attribute')
 const chartType = ref('U')
 
@@ -357,7 +445,9 @@ const samplingForm = ref({
 const tabs = [
   { label: '数据记录', value: 'data' },
   { label: '控制图', value: 'chart' },
-  { label: '抽样方案', value: 'sampling' }
+  { label: '抽样方案', value: 'sampling' },
+  { label: '控制计划', value: 'control-plan' },
+  { label: 'OCAP', value: 'ocap' }
 ]
 
 const lineId = Number(route.params.id)
@@ -508,9 +598,102 @@ const goBack = () => {
   router.push('/production-lines')
 }
 
+const fetchControlPlans = async () => {
+  try {
+    const response = await getControlPlans(lineId) as ControlPlan[]
+    controlPlans.value = response
+  } catch (error) {
+    console.error('获取控制计划失败:', error)
+  }
+}
+
+const fetchOCAPs = async () => {
+  try {
+    const response = await getOCAPs(undefined, lineId) as OCAP[]
+    ocaps.value = response
+  } catch (error) {
+    console.error('获取OCAP失败:', error)
+  }
+}
+
+const goToControlPlans = () => {
+  router.push(`/production-lines/${lineId}/control-plans`)
+}
+
+const goToOCAPs = () => {
+  router.push(`/production-lines/${lineId}/ocaps`)
+}
+
+const viewControlPlan = (plan: ControlPlan) => {
+  router.push(`/control-plans/${plan.id}`)
+}
+
+const viewOCAP = (ocap: OCAP) => {
+  router.push(`/ocaps/${ocap.id}`)
+}
+
+const getPlanTypeText = (type?: string) => {
+  const map: Record<string, string> = {
+    'prototype': '原型样件',
+    'pre-launch': '试生产',
+    'production': '生产'
+  }
+  return type ? map[type] || type : '–'
+}
+
+const getPlanTypeTag = (type?: string): '' | 'success' | 'warning' | 'info' | 'danger' => {
+  const map: Record<string, '' | 'success' | 'warning' | 'info' | 'danger'> = {
+    'prototype': 'info',
+    'pre-launch': 'warning',
+    'production': 'success'
+  }
+  return type ? map[type] || '' : ''
+}
+
+const getStatusText = (status?: string) => {
+  const map: Record<string, string> = {
+    'draft': '草稿',
+    'approved': '已批准',
+    'active': '激活',
+    'obsolete': '已废弃'
+  }
+  return status ? map[status] || status : '–'
+}
+
+const getPriorityText = (priority?: string) => {
+  const map: Record<string, string> = {
+    'critical': '紧急',
+    'high': '高',
+    'medium': '中',
+    'low': '低'
+  }
+  return priority ? map[priority] || priority : '–'
+}
+
+const getOcapStatusText = (status?: string) => {
+  const map: Record<string, string> = {
+    'draft': '草稿',
+    'active': '激活',
+    'executing': '执行中',
+    'completed': '已完成',
+    'closed': '已关闭'
+  }
+  return status ? map[status] || status : '–'
+}
+
 watch(activeTab, (val) => {
   if (val === 'sampling') {
     fetchSamplingPlans()
+  } else if (val === 'control-plan') {
+    fetchControlPlans()
+  } else if (val === 'ocap') {
+    fetchOCAPs()
+  }
+}, { immediate: true })
+
+watch(() => route.query.tab, (newTab) => {
+  if (newTab && typeof newTab === 'string') {
+    activeTab.value = newTab
   }
 })
 
@@ -872,6 +1055,143 @@ onMounted(() => {
 .sampling-info .value {
   font-size: 0.875rem;
   color: var(--text-primary);
+}
+
+.control-plans-list,
+.ocaps-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.plan-card,
+.ocap-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.plan-card:hover,
+.ocap-card:hover {
+  border-color: var(--accent-primary);
+  transform: translateY(-2px);
+}
+
+.plan-header,
+.ocap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.plan-number {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--accent-primary);
+}
+
+.plan-body,
+.ocap-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.plan-info,
+.ocap-info {
+  display: flex;
+  justify-content: space-between;
+}
+
+.plan-info .label,
+.ocap-info .label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.plan-info .value,
+.ocap-info .value {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+.ocap-name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.priority-badge {
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.priority-badge.critical {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger);
+}
+
+.priority-badge.high {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warning);
+}
+
+.priority-badge.medium {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.priority-badge.low {
+  background: rgba(107, 114, 128, 0.15);
+  color: var(--text-muted);
+}
+
+.status-badge.draft {
+  background: rgba(107, 114, 128, 0.15);
+  color: var(--text-muted);
+}
+
+.status-badge.approved {
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+}
+
+.status-badge.active {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+}
+
+.status-badge.executing {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warning);
+}
+
+.status-badge.completed {
+  background: rgba(16, 185, 129, 0.15);
+  color: var(--success);
+}
+
+.status-badge.closed {
+  background: rgba(107, 114, 128, 0.15);
+  color: var(--text-muted);
+}
+
+.status-badge.obsolete {
+  background: rgba(239, 68, 68, 0.15);
+  color: var(--danger);
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 8px;
 }
 
 @media (max-width: 1200px) {

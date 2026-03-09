@@ -85,14 +85,55 @@
             <p class="module-desc">实时监控生产过程质量状态</p>
           </router-link>
           
-          <router-link :to="`/production-lines/${lineId}/capability-analysis`" class="module-card">
+          <router-link 
+            v-if="line?.data_type === 'measurement'" 
+            :to="`/production-lines/${lineId}/capability-analysis`" 
+            class="module-card"
+          >
             <div class="module-icon capability">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
               </svg>
             </div>
             <h3 class="module-title">能力分析</h3>
-            <p class="module-desc">过程能力指数计算与评价</p>
+            <p class="module-desc">过程能力指数计算与评价（仅计量型数据）</p>
+          </router-link>
+          
+          <div v-else class="module-card disabled">
+            <div class="module-icon capability">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+              </svg>
+            </div>
+            <h3 class="module-title">能力分析</h3>
+            <p class="module-desc">仅适用于计量型数据产线</p>
+            <span class="module-tag">当前产线为计数型</span>
+          </div>
+          
+          <router-link :to="`/production-lines/${lineId}/control-plans`" class="module-card">
+            <div class="module-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+            </div>
+            <h3 class="module-title">控制计划</h3>
+            <p class="module-desc">AIAG-VDA标准质量控制计划</p>
+          </router-link>
+          
+          <router-link :to="`/production-lines/${lineId}/ocaps`" class="module-card">
+            <div class="module-icon warning">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <h3 class="module-title">OCAP</h3>
+            <p class="module-desc">失控行动计划与异常处理流程</p>
           </router-link>
         </div>
       </div>
@@ -343,6 +384,26 @@ onMounted(() => {
   font-size: 0.875rem;
   color: var(--text-muted);
   text-align: center;
+}
+
+.module-card.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.module-card.disabled .module-icon {
+  background: rgba(107, 114, 128, 0.1);
+  color: var(--text-muted);
+}
+
+.module-tag {
+  margin-top: 8px;
+  padding: 4px 12px;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 100px;
+  font-size: 0.75rem;
+  color: var(--danger);
 }
 
 @media (max-width: 1200px) {

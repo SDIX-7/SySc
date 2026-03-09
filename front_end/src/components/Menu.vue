@@ -44,7 +44,8 @@
 import { useRoute } from 'vue-router'
 import { 
   HomeFilled, 
-  Setting
+  Setting,
+  Document
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -52,6 +53,7 @@ const route = useRoute()
 const menuItems = [
   { name: '首页', path: '/', icon: HomeFilled },
   { name: '产线管理', path: '/production-lines', icon: Setting },
+  { name: '控制计划', path: '/control-plans', icon: Document },
 ]
 
 const isActive = (path: string) => {

@@ -318,11 +318,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { showMessage } from '@/utils/dialog'
 import * as XLSX from 'xlsx'
 import Menu from '@/components/Menu.vue'
-import { getProductionLine, getMeasurementData, createCapabilityAnalysis } from '@/api'
-import type { ProductionLine, MeasurementData, CapabilityAnalysisCreate } from '@/types'
+import { getProductionLine, getMeasurementData, createCapabilityAnalysis, getCapabilityAnalyses } from '@/api'
+import type { ProductionLine, MeasurementData, CapabilityAnalysisCreate, CapabilityAnalysis } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -330,6 +330,7 @@ const router = useRouter()
 const lineId = Number(route.params.id)
 const line = ref<ProductionLine | null>(null)
 const measurementData = ref<MeasurementData[]>([])
+const lastAnalysis = ref<CapabilityAnalysis | null>(null)
 
 const form = ref<CapabilityAnalysisCreate>({
   line_id: lineId,
@@ -380,16 +381,29 @@ const isFormValid = computed(() => {
 
 const fetchData = async () => {
   try {
-    const [lineRes, measureRes] = await Promise.all([
+    const [lineRes, measureRes, analysesRes] = await Promise.all([
       getProductionLine(lineId),
-      getMeasurementData(lineId)
+      getMeasurementData(lineId),
+      getCapabilityAnalyses(lineId)
     ])
     
     line.value = lineRes as ProductionLine
+    
+    if (line.value?.data_type === 'attribute') {
+      showMessage.error('计数型数据产线不支持过程能力分析')
+      router.push(`/production-lines/${lineId}`)
+      return
+    }
+    
     measurementData.value = (measureRes as MeasurementData[]).reverse()
+    
+    const analyses = analysesRes as CapabilityAnalysis[]
+    if (analyses && analyses.length > 0) {
+      lastAnalysis.value = analyses[0]
+    }
   } catch (error) {
     console.error('获取数据失败:', error)
-    ElMessage.error('获取产线数据失败')
+    showMessage.error('获取产线数据失败')
   }
 }
 
@@ -405,13 +419,21 @@ const importFromLine = () => {
   })
   
   form.value.data_values = values
-  ElMessage.success(`已导入 ${values.length} 个数据点`)
+  
+  if (lastAnalysis.value && form.value.usl === 0 && form.value.lsl === 0) {
+    form.value.usl = parseFloat(lastAnalysis.value.usl)
+    form.value.lsl = parseFloat(lastAnalysis.value.lsl)
+    form.value.target = lastAnalysis.value.target ? parseFloat(lastAnalysis.value.target) : undefined
+    showMessage.success(`已导入 ${values.length} 个数据点，已从上次分析记录获取规格限`)
+  } else {
+    showMessage.success(`已导入 ${values.length} 个数据点`)
+  }
 }
 
 const parseManualData = () => {
   const text = manualDataText.value.trim()
   if (!text) {
-    ElMessage.warning('请输入数据')
+    showMessage.warning('请输入数据')
     return
   }
   
@@ -426,12 +448,12 @@ const parseManualData = () => {
   })
   
   if (values.length === 0) {
-    ElMessage.error('未能解析到有效数据')
+    showMessage.error('未能解析到有效数据')
     return
   }
   
   form.value.data_values = values
-  ElMessage.success(`已解析 ${values.length} 个数据点`)
+  showMessage.success(`已解析 ${values.length} 个数据点`)
 }
 
 const triggerFileUpload = () => {
@@ -466,7 +488,7 @@ const processFile = (file: File) => {
         if (!isNaN(val)) values.push(val)
       })
       form.value.data_values = values
-      ElMessage.success(`已解析 ${values.length} 个数据点`)
+      showMessage.success(`已解析 ${values.length} 个数据点`)
     }
     reader.readAsText(file)
   } else if (ext === 'xlsx' || ext === 'xls') {
@@ -487,9 +509,9 @@ const processFile = (file: File) => {
         })
         
         form.value.data_values = values
-        ElMessage.success(`已解析 ${values.length} 个数据点`)
+        showMessage.success(`已解析 ${values.length} 个数据点`)
       } catch (error) {
-        ElMessage.error('文件解析失败')
+        showMessage.error('文件解析失败')
       }
     }
     reader.readAsBinaryString(file)
@@ -523,7 +545,7 @@ const validateForm = () => {
 
 const submitAnalysis = async () => {
   if (!validateForm()) {
-    ElMessage.error('请检查表单填写是否正确')
+    showMessage.error('请检查表单填写是否正确')
     return
   }
   
@@ -531,11 +553,11 @@ const submitAnalysis = async () => {
   
   try {
     const result = await createCapabilityAnalysis(form.value)
-    ElMessage.success('能力分析完成')
+    showMessage.success('能力分析完成')
     router.push(`/capability-analysis/${(result as any).id}`)
   } catch (error: any) {
     console.error('分析失败:', error)
-    ElMessage.error(error.response?.data?.detail || '分析失败，请重试')
+    showMessage.error(error.response?.data?.detail || '分析失败，请重试')
   } finally {
     submitting.value = false
   }
