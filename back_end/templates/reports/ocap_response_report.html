@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCAP Response Plan Report - {{ ocap_number or title or 'OCAP 报告' }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            padding: 30px;
+            line-height: 1.6;
+        }
+        
+        .report-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .report-header {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 50%, #f87171 100%);
+            color: white;
+            padding: 50px 40px;
+            position: relative;
+        }
+        
+        .report-header h1 {
+            font-size: 32px;
+            margin-bottom: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        
+        .report-header .subtitle {
+            font-size: 16px;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+        
+        .priority-badge {
+            display: inline-block;
+            padding: 8px 24px;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-top: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .priority-badge.critical {
+            background: rgba(0,0,0,0.3);
+            animation: pulse 2s infinite;
+        }
+        
+        .priority-badge.high {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .priority-badge.medium {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        .priority-badge.low {
+            background: rgba(255,255,255,0.15);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .report-body {
+            padding: 40px;
+        }
+        
+        .section {
+            margin-bottom: 32px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #dc2626;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #ef4444;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 28px;
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            margin-right: 12px;
+            border-radius: 3px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+        
+        .info-card {
+            padding: 20px;
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            border-radius: 10px;
+            border-left: 5px solid #ef4444;
+            transition: all 0.3s ease;
+        }
+        
+        .info-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: #7f1d1d;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-value {
+            font-size: 15px;
+            color: #1e293b;
+            font-weight: 600;
+        }
+        
+        .status-timeline {
+            position: relative;
+            padding: 30px 0;
+            margin: 30px 0;
+        }
+        
+        .status-timeline::before {
+            content: '';
+            position: absolute;
+            left: 30px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(135deg, #ef4444, #f87171);
+            border-radius: 2px;
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-left: 80px;
+            margin-bottom: 30px;
+        }
+        
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            left: 0;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: white;
+            border: 4px solid #ef4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #dc2626;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+            z-index: 1;
+        }
+        
+        .timeline-content {
+            padding: 20px;
+            background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+        }
+        
+        .timeline-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        
+        .timeline-time {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 12px;
+        }
+        
+        .timeline-desc {
+            font-size: 13px;
+            color: #475569;
+            line-height: 1.6;
+        }
+        
+        .signals-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin: 20px 0;
+        }
+        
+        .signal-card {
+            padding: 20px;
+            background: linear-gradient(135deg, #fff1f2, #ffe4e6);
+            border-radius: 10px;
+            border: 2px solid #fecaca;
+        }
+        
+        .signal-type {
+            font-size: 11px;
+            color: #dc2626;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        
+        .signal-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+        
+        .signal-time {
+            font-size: 12px;
+            color: #64748b;
+        }
+        
+        .steps-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 13px;
+        }
+        
+        .steps-table th {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            color: white;
+            padding: 14px 12px;
+            text-align: left;
+            font-weight: 600;
+            border: 2px solid #dc2626;
+        }
+        
+        .steps-table td {
+            padding: 12px;
+            border: 1px solid #fecaca;
+            vertical-align: top;
+        }
+        
+        .steps-table tr:nth-child(even) {
+            background: #fef2f2;
+        }
+        
+        .steps-table tr:hover {
+            background: #fee2e2;
+        }
+        
+        .phase-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .phase-badge.detection {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .phase-badge.containment {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+        
+        .phase-badge.corrective {
+            background: #fecaca;
+            color: #991b1b;
+        }
+        
+        .phase-badge.verification {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin: 20px 0;
+        }
+        
+        .action-card {
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            border-left: 5px solid #3b82f6;
+        }
+        
+        .action-card.completed {
+            border-left-color: #10b981;
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+        }
+        
+        .action-card.in-progress {
+            border-left-color: #f59e0b;
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+        }
+        
+        .action-card.pending {
+            border-left-color: #6b7280;
+            background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+        }
+        
+        .action-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        
+        .action-desc {
+            font-size: 12px;
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+        
+        .action-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: #94a3b8;
+        }
+        
+        .root-cause-box {
+            padding: 24px;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-radius: 10px;
+            border: 2px solid #f59e0b;
+            margin: 20px 0;
+        }
+        
+        .root-cause-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 12px;
+        }
+        
+        .root-cause-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .root-cause-list li {
+            padding: 8px 0;
+            padding-left: 24px;
+            position: relative;
+            color: #78350f;
+            font-size: 13px;
+        }
+        
+        .root-cause-list li::before {
+            content: '🔍';
+            position: absolute;
+            left: 0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            padding: 24px;
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border-radius: 10px;
+            text-align: center;
+            border: 2px solid #cbd5e1;
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #dc2626;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .report-footer {
+            padding: 32px 40px;
+            background: linear-gradient(135deg, #fef2f2, #fee2e2);
+            text-align: center;
+            color: #7f1d1d;
+            font-size: 12px;
+            border-top: 3px solid #ef4444;
+        }
+        
+        .report-footer p {
+            margin: 6px 0;
+        }
+        
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 120px;
+            color: rgba(220, 38, 38, 0.03);
+            pointer-events: none;
+            z-index: 0;
+            font-weight: bold;
+        }
+        
+        @media print {
+            body {
+                padding: 0;
+                background: white;
+            }
+            
+            .report-container {
+                box-shadow: none;
+                border-radius: 0;
+            }
+            
+            .info-card:hover,
+            .stat-card:hover {
+                transform: none;
+                box-shadow: none;
+            }
+        }
+        
+        @media screen and (max-width: 1200px) {
+            .info-grid,
+            .signals-grid,
+            .actions-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="watermark">OCAP REPORT</div>
+    
+    <div class="report-container">
+        <div class="report-header">
+            <h1>OCAP Response Plan Report</h1>
+            <div class="subtitle">Out of Control Action Plan | 异常响应计划报告</div>
+            
+            <div class="priority-badge {{ priority_class or 'medium' }}">
+                {{ priority_text or 'MEDIUM PRIORITY' }}
+            </div>
+        </div>
+        
+        <div class="report-body">
+            <div class="section">
+                <h2 class="section-title">OCAP 基本信息 (Basic Information)</h2>
+                <div class="info-grid">
+                    <div class="info-card">
+                        <div class="info-label">OCAP Number</div>
+                        <div class="info-value">{{ ocap_number or 'N/A' }}</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Title (标题)</div>
+                        <div class="info-value">{{ title or 'N/A' }}</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Production Line (产线)</div>
+                        <div class="info-value">{{ production_line or 'N/A' }}</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Assigned To (负责人)</div>
+                        <div class="info-value">{{ assigned_to or 'N/A' }}</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Status (状态)</div>
+                        <div class="info-value">{{ status or 'N/A' }}</div>
+                    </div>
+                    <div class="info-card">
+                        <div class="info-label">Created Time (创建时间)</div>
+                        <div class="info-value">{{ created_time or 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">统计信息 (Statistics)</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ total_signals }}</div>
+                        <div class="stat-label">SPC Signals<br>触发信号数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ total_steps }}</div>
+                        <div class="stat-label">Response Steps<br>响应步骤数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ total_root_causes }}</div>
+                        <div class="stat-label">Root Causes<br>根本原因数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">{{ total_actions }}</div>
+                        <div class="stat-label">Corrective Actions<br>纠正措施数</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">SPC 触发信号 (SPC Trigger Signals)</h2>
+                <div class="signals-grid">
+                    {% for signal in signals %}
+                    <div class="signal-card">
+                        <div class="signal-type">{{ signal.signal_type or 'Unknown' }}</div>
+                        <div class="signal-value">{{ signal.rule or 'N/A' }}</div>
+                        <div class="signal-time">
+                            Triggered: {{ signal.triggered_time or 'N/A' }}<br>
+                            Value: {{ signal.measurement_value or 'N/A' }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">响应时间线 (Response Timeline)</h2>
+                <div class="status-timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker">🚨</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">异常检测 (Detection)</div>
+                            <div class="timeline-time">{{ detection_time or 'N/A' }}</div>
+                            <div class="timeline-desc">SPC 控制图检测到异常信号，触发 OCAP 流程</div>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker">🔒</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">围堵措施 (Containment)</div>
+                            <div class="timeline-time">{{ containment_time or 'N/A' }}</div>
+                            <div class="timeline-desc">实施临时围堵措施，防止不合格品流出</div>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker">🔧</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">纠正措施 (Corrective Action)</div>
+                            <div class="timeline-time">{{ corrective_time or 'N/A' }}</div>
+                            <div class="timeline-desc">实施根本原因纠正措施，消除问题根源</div>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker">✅</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">效果验证 (Verification)</div>
+                            <div class="timeline-time">{{ verification_time or 'N/A' }}</div>
+                            <div class="timeline-desc">验证措施有效性，确认过程恢复正常</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">响应步骤明细 (Response Steps Details)</h2>
+                <table class="steps-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">No.</th>
+                            <th style="width: 100px;">Phase</th>
+                            <th>Step Description (步骤描述)</th>
+                            <th style="width: 150px;">Responsible (责任人)</th>
+                            <th style="width: 120px;">Status (状态)</th>
+                            <th style="width: 150px;">Completion (完成时间)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for step in steps %}
+                        <tr>
+                            <td style="text-align: center; font-weight: 600;">{{ loop.index }}</td>
+                            <td>
+                                <span class="phase-badge {{ step.phase_class or 'detection' }}">
+                                    {{ step.phase or 'Detection' }}
+                                </span>
+                            </td>
+                            <td>{{ step.description or 'N/A' }}</td>
+                            <td>{{ step.responsible or 'N/A' }}</td>
+                            <td>{{ step.status or 'Pending' }}</td>
+                            <td>{{ step.completion_time or 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">根本原因分析 (Root Cause Analysis)</h2>
+                <div class="root-cause-box">
+                    <div class="root-cause-title">Identified Root Causes (已识别的根本原因)</div>
+                    <ul class="root-cause-list">
+                        {% for cause in root_causes %}
+                        <li>{{ cause.description or 'N/A' }} 
+                            {% if cause.category %}【{{ cause.category }}】{% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">纠正措施 (Corrective Actions)</h2>
+                <div class="actions-grid">
+                    {% for action in actions %}
+                    <div class="action-card {{ action.status_class or 'pending' }}">
+                        <div class="action-title">{{ action.title or 'N/A' }}</div>
+                        <div class="action-desc">{{ action.description or 'N/A' }}</div>
+                        <div class="action-meta">
+                            <span>Owner: {{ action.owner or 'N/A' }}</span>
+                            <span>Due: {{ action.due_date or 'N/A' }}</span>
+                            <span>Status: {{ action.status or 'Pending' }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="report-footer">
+            <p>
+                <strong>Report Generated:</strong> {{ generated_time }} | 
+                <strong>OCAP ID:</strong> {{ ocap_id }}
+            </p>
+            <p>
+                This report is automatically generated by Quality Information System |
+                Out of Control Action Plan (OCAP) Management
+            </p>
+            <p style="margin-top: 12px; font-size: 11px;">
+                For questions or concerns, please contact the assigned responsible person or quality department.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

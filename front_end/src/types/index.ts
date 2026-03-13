@@ -598,3 +598,109 @@ export interface OCAPUpdate {
   status?: OCAPStatus
   is_active?: boolean
 }
+
+export type MSAStudyType = 'grr' | 'bias' | 'stability' | 'linearity'
+export type MSAStudyStatus = 'draft' | 'in_progress' | 'completed'
+export type MSAAcceptance = 'acceptable' | 'conditional' | 'unacceptable'
+
+export interface MSAPart {
+  id?: number
+  msa_study_id?: number
+  part_number: string
+  part_name?: string
+  reference_value?: number | string
+  sort_order?: number
+}
+
+export interface MSAOperator {
+  id?: number
+  msa_study_id?: number
+  operator_name: string
+  operator_id?: string
+  sort_order?: number
+}
+
+export interface MSAMeasurement {
+  id?: number
+  msa_study_id?: number
+  part_id: number
+  operator_id: number
+  replicate: number
+  measurement_value: string | number
+  measurement_order?: number
+  measured_at?: string
+}
+
+export interface MSAResult {
+  id?: number
+  msa_study_id?: number
+  study_type: MSAStudyType
+  calculation_method: string
+  variance_repeatability?: string
+  variance_reproducibility?: string
+  variance_grr?: string
+  variance_part?: string
+  variance_total?: string
+  stddev_repeatability?: string
+  stddev_reproducibility?: string
+  stddev_grr?: string
+  stddev_part?: string
+  stddev_total?: string
+  percent_grr?: string
+  percent_tolerance?: string
+  ndc?: string
+  grr_acceptance?: MSAAcceptance
+  ndc_acceptance?: MSAAcceptance
+  overall_acceptance?: MSAAcceptance
+  detailed_results?: Record<string, any>
+  calculated_at?: string
+  created_at?: string
+}
+
+export interface MSAStudy {
+  id?: number
+  line_id?: number
+  study_name: string
+  study_type: MSAStudyType
+  status: MSAStudyStatus
+  measurement_system?: string
+  characteristic?: string
+  specification_lower?: string
+  specification_upper?: string
+  specification_target?: string
+  tolerance?: string
+  number_of_parts: number
+  number_of_operators: number
+  number_of_replicates: number
+  random_order: boolean
+  created_by?: string
+  created_at?: string
+  updated_at?: string
+  parts?: MSAPart[]
+  operators?: MSAOperator[]
+  measurements?: MSAMeasurement[]
+  result?: MSAResult
+}
+
+export interface MSAStudyCreate {
+  line_id?: number
+  study_name: string
+  study_type?: MSAStudyType
+  status?: MSAStudyStatus
+  measurement_system?: string
+  characteristic?: string
+  specification_lower?: string
+  specification_upper?: string
+  specification_target?: string
+  tolerance?: string
+  number_of_parts?: number
+  number_of_operators?: number
+  number_of_replicates?: number
+  random_order?: boolean
+  created_by?: string
+  parts?: MSAPart[]
+  operators?: MSAOperator[]
+  measurements?: MSAMeasurement[]
+}
+
+export interface MSAStudyUpdate extends Partial<MSAStudyCreate> {}

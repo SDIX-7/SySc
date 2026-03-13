@@ -17,14 +17,20 @@
         </div>
         <div class="header-right">
           <div class="action-buttons">
-            <button class="btn-export" @click="exportReport" title="导出报告">
+            <el-dropdown split-button @command="handleExport" title="导出报告">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="7 10 12 15 17 10"/>
                 <line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
-              导出报告
-            </button>
+              导出
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="html">导出 HTML 报告</el-dropdown-item>
+                  <el-dropdown-item command="excel">导出 Excel 数据</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
             <div class="analysis-type-badge" :class="analysis.analysis_type">
               {{ getAnalysisTypeText(analysis.analysis_type) }}
             </div>
@@ -327,7 +333,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { showMessage } from '@/utils/dialog'
 import * as echarts from 'echarts'
 import Menu from '@/components/Menu.vue'
-import { getCapabilityAnalysis } from '@/api'
+import { getCapabilityAnalysis, exportCapabilityReport } from '@/api'
 import type { CapabilityAnalysisResult, CapabilityIndices } from '@/types'
 
 const route = useRoute()
@@ -655,6 +661,29 @@ const exportReport = () => {
   URL.revokeObjectURL(url)
   
   showMessage.success('报告已导出')
+}
+
+const handleExport = async (command: 'html' | 'excel') => {
+  try {
+    if (command === 'html') {
+      const response = await exportCapabilityReport(analysisId)
+      const blob = new Blob([response as any], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `能力分析报告_${analysis.value?.analysis_name || analysisId}_${new Date().toISOString().split('T')[0]}.html`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+      showMessage.success('HTML 报告导出成功')
+    } else if (command === 'excel') {
+      showMessage.info('Excel 导出功能开发中...')
+    }
+  } catch (error) {
+    console.error('导出失败:', error)
+    showMessage.error('导出失败')
+  }
 }
 
 const generateReportContent = () => {

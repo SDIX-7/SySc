@@ -66,9 +66,21 @@ export const deleteControlPlanItem = (planId: number, itemId: number) => request
   url: `/api/control-plans/${planId}/items/${itemId}`
 })
 
+/**
+ * 导出控制计划 Excel（AIAG/VDA 标准格式）
+ */
 export const exportControlPlanExcel = (planId: number) => request({
   method: 'get',
   url: `/api/control-plans/${planId}/export/excel`,
+  responseType: 'blob'
+})
+
+/**
+ * 导出控制计划详细报告（HTML 格式）
+ */
+export const exportControlPlanReport = (planId: number) => request({
+  method: 'get',
+  url: `/api/control-plans/${planId}/export/report`,
   responseType: 'blob'
 })
 

@@ -14,7 +14,15 @@
         </div>
         <div class="header-right">
           <el-button @click="router.push(`/control-plans/${planId}/edit`)">编辑</el-button>
-          <el-button type="success" @click="exportPlan">导出Excel</el-button>
+          <el-dropdown split-button type="success" @command="handleExport">
+            导出
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="excel">导出 Excel (AIAG/VDA 格式)</el-dropdown-item>
+                <el-dropdown-item command="report">导出详细报告 (HTML)</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
           <el-button @click="router.back()">返回</el-button>
         </div>
       </div>
@@ -188,7 +196,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import Menu from '@/components/Menu.vue'
-import { getControlPlan, exportControlPlanExcel } from '@/api/controlPlan'
+import { getControlPlan, exportControlPlanExcel, exportControlPlanReport } from '@/api/controlPlan'
 import type { ControlPlan, PlanType, ControlPlanStatus } from '@/types'
 
 const router = useRouter()
@@ -223,6 +231,38 @@ const exportPlan = async () => {
     link.click()
     window.URL.revokeObjectURL(url)
     ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleExport = async (command: 'excel' | 'report') => {
+  try {
+    loading.value = true
+    if (command === 'excel') {
+      const response = await exportControlPlanExcel(planId)
+      const blob = new Blob([response as any], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `控制计划_${controlPlan.value?.part_number || planId}.xlsx`
+      link.click()
+      window.URL.revokeObjectURL(url)
+      ElMessage.success('Excel 导出成功')
+    } else if (command === 'report') {
+      const response = await exportControlPlanReport(planId)
+      const blob = new Blob([response as any], { type: 'text/html' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `控制计划_${controlPlan.value?.part_number || planId}_报告_${new Date().toISOString().split('T')[0]}.html`
+      link.click()
+      window.URL.revokeObjectURL(url)
+      ElMessage.success('详细报告导出成功')
+    }
   } catch (error) {
     console.error('导出失败:', error)
     ElMessage.error('导出失败')

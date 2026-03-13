@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPC & Process Capability Study Report - Skewed Distribution</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        body {
+            font-family: Arial, 'Microsoft YaHei', sans-serif;
+            font-size: 9px;
+            padding: 15mm;
+            background: white;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 297mm;
+            margin: 0 auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            margin-bottom: 8px;
+        }
+        
+        th, td {
+            border: 1.5px solid #000;
+            padding: 4px 6px;
+            text-align: left;
+            vertical-align: middle;
+            word-wrap: break-word;
+        }
+        
+        th {
+            background-color: #f0f0f0 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .main-title {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            padding: 8px;
+            background: #e0e0e0;
+        }
+        
+        .subtitle {
+            font-size: 11px;
+            text-align: center;
+            padding: 4px;
+            font-style: italic;
+        }
+        
+        .logos {
+            text-align: right;
+            padding: 4px;
+            font-size: 9px;
+            font-weight: bold;
+        }
+        
+        .section-header {
+            background: #bfbfbf;
+            font-weight: bold;
+            text-align: center;
+            padding: 5px;
+            border: 1.5px solid #000;
+        }
+        
+        .circle-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 15px;
+            height: 15px;
+            border: 1px solid #000;
+            border-radius: 50%;
+            font-size: 9px;
+            font-weight: bold;
+            margin-right: 4px;
+            flex-shrink: 0;
+        }
+        
+        .label-text {
+            font-size: 8px;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+        
+        .data-cell {
+            font-size: 9px;
+            min-height: 18px;
+            background: white;
+        }
+        
+        .chart-box {
+            border: 1px dashed #666;
+            background: #fafafa;
+            padding: 20px;
+            margin: 10px;
+            height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .chart-placeholder {
+            color: #666;
+            font-size: 9px;
+            text-align: center;
+        }
+        
+        .stats-table {
+            background: #f2f2f2;
+        }
+        
+        .warning-box {
+            padding: 12px;
+            background: #fff3e0;
+            border: 1.5px solid #f57c00;
+            margin-top: 8px;
+        }
+        
+        .warning-title {
+            font-size: 10px;
+            font-weight: bold;
+            margin-bottom: 6px;
+            color: #e65100;
+        }
+        
+        .warning-text {
+            font-size: 9px;
+            line-height: 1.5;
+            color: #333;
+        }
+        
+        .distribution-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #ff9800;
+            color: white;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+        
+        .transform-note {
+            font-size: 8px;
+            color: #666;
+            font-style: italic;
+            margin-top: 4px;
+        }
+        
+        .footer-cell {
+            text-align: center;
+            padding: 8px;
+            background: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Section -->
+        <table>
+            <tr>
+                <td class="main-title">
+                    SPC & PROCESS CAPABILITY STUDY REPORT
+                    <span class="distribution-badge">SKEWED DISTRIBUTION</span>
+                </td>
+            </tr>
+            <tr>
+                <td class="subtitle">AIAG / VDA SPC harmonized standard</td>
+            </tr>
+            <tr>
+                <td class="logos">
+                    AIAG | VDA | QMC
+                </td>
+            </tr>
+        </table>
+        
+        <!-- Section 1-6: Process and Part Information -->
+        <table>
+            <colgroup>
+                <col style="width: 25%;">
+                <col style="width: 25%;">
+                <col style="width: 25%;">
+                <col style="width: 25%;">
+            </colgroup>
+            <tbody>
+                <tr>
+                    <th colspan="4" class="section-header">
+                        <span class="circle-number">1-6</span>PROCESS AND PART INFORMATION
+                    </th>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">1</span>PROCESS NAME / MACHINE / LOCATION
+                        </div>
+                        <div class="data-cell">{{ process_name or '' }} | {{ machine_name or '' }} | {{ study_location or '' }}</div>
+                    </td>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">2</span>PROCESS REF. NO. / MACHINE REF. NO.
+                        </div>
+                        <div class="data-cell">{{ process_ref_number or '' }} | {{ machine_ref_number or '' }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">3</span>PEOPLE WHO PERFORMED STUDY
+                        </div>
+                        <div class="data-cell">{{ operator_name or '' }}</div>
+                    </td>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">4</span>TIME AND DURATION OF DATA COLLECTION
+                        </div>
+                        <div class="data-cell">{{ study_date or '' }} | {{ start_time or '' }} - {{ end_time or '' }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">5</span>PART NAME / REFERENCE NUMBER
+                        </div>
+                        <div class="data-cell">{{ part_name_id or '' }}</div>
+                    </td>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">6</span>CHARACTERISTIC & SPECIFICATION LIMITS
+                        </div>
+                        <div class="data-cell">{{ characteristic_name_id or '' }} | LSL: {{ lsl or '' }} | USL: {{ usl or '' }}</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- Section 7-10: Study Conditions -->
+        <table>
+            <colgroup>
+                <col style="width: 25%;">
+                <col style="width: 25%;">
+                <col style="width: 25%;">
+                <col style="width: 25%;">
+            </colgroup>
+            <tbody>
+                <tr>
+                    <th colspan="4" class="section-header">
+                        <span class="circle-number">7-10</span>STUDY CONDITIONS
+                    </th>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">7</span>TECHNICAL CONDITIONS (Batches, Operation, Tools)
+                        </div>
+                        <div class="data-cell">{{ technical_conditions or '' }}</div>
+                    </td>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">8</span>DEVIATIONS FROM STABLE CONDITIONS
+                        </div>
+                        <div class="data-cell">{{ deviations or '' }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="label-text">
+                            <span class="circle-number">9</span>NUMBER OF VALUES
+                        </div>
+                        <div class="data-cell">{{ sample_size or '' }}</div>
+                    </td>
+                    <td>
+                        <div class="label-text">
+                            <span class="circle-number">10</span>SAMPLING FREQUENCY / SUBGROUP SIZE
+                        </div>
+                        <div class="data-cell">{{ sampling_frequency or '' }} / {{ subgroup_size or '' }}</div>
+                    </td>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">17</span>DISTRIBUTION MODEL
+                        </div>
+                        <div class="data-cell">{{ distribution_model or 'Skewed (Weibull/Lognormal)' }}</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- Charts Section -->
+        <table>
+            <colgroup>
+                <col style="width: 50%;">
+                <col style="width: 50%;">
+            </colgroup>
+            <tbody>
+                <tr>
+                    <th colspan="2" class="section-header">
+                        <span class="circle-number">11-14</span>GRAPHS AND CHARTS
+                    </th>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="chart-box">
+                            <div class="chart-placeholder">
+                                <div style="font-weight: bold; margin-bottom: 8px;">
+                                    <span class="circle-number">11</span>HISTOGRAM
+                                </div>
+                                <div>[直方图 - 偏态分布]</div>
+                                <div style="font-size: 8px; color: #999; margin-top: 4px;">
+                                    数据呈现偏态分布形态
+                                </div>
+                                <div class="transform-note">
+                                    * 可能需要数据转换 (Box-Cox/Johnson)
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="chart-box">
+                            <div class="chart-placeholder">
+                                <div style="font-weight: bold; margin-bottom: 8px;">
+                                    <span class="circle-number">12</span>RUN CHART
+                                </div>
+                                <div>[运行图 - 数据随时间变化]</div>
+                                <div style="font-size: 8px; color: #999; margin-top: 4px;">
+                                    定性评估数据随时间的变化
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="chart-box">
+                            <div class="chart-placeholder">
+                                <div style="font-weight: bold; margin-bottom: 8px;">
+                                    <span class="circle-number">13</span>PROBABILITY PLOT (Non-Normal)
+                                </div>
+                                <div>[概率图 - 非正态分布]</div>
+                                <div style="font-size: 8px; color: #f57c00; margin-top: 4px; font-weight: bold;">
+                                    P-value < 0.05
+                                </div>
+                                <div style="font-size: 8px; color: #999; margin-top: 4px;">
+                                    数据不符合正态分布假设
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="chart-box">
+                            <div class="chart-placeholder">
+                                <div style="font-weight: bold; margin-bottom: 8px;">
+                                    <span class="circle-number">14</span>PERCENTILE METHOD
+                                </div>
+                                <div>[百分位法 - 非参数方法]</div>
+                                <div style="font-size: 8px; color: #999; margin-top: 4px;">
+                                    使用百分位法计算能力指数<br>
+                                    无需数据转换假设
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- Section 15-16: Process Parameters -->
+        <table>
+            <colgroup>
+                <col style="width: 25%;">
+                <col style="width: 25%;">
+                <col style="width: 25%;">
+                <col style="width: 25%;">
+            </colgroup>
+            <tbody>
+                <tr>
+                    <th colspan="4" class="section-header">
+                        <span class="circle-number">15-16</span>PROCESS PARAMETERS
+                    </th>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="label-text">
+                            <span class="circle-number">15</span>PROCESS LOCATION (Median)
+                        </div>
+                        <div class="data-cell">Median = {{ median or '0.0000' }}</div>
+                        <div class="data-cell" style="font-size: 8px; color: #666;">计算方法：{{ calculation_method or 'Percentile Method' }}</div>
+                    </td>
+                    <td>
+                        <div class="label-text">
+                            <span class="circle-number">16</span>PROCESS VARIATION (Sigma)
+                        </div>
+                        <div class="data-cell">Sigma (Within) = {{ sigma_within or '0.0000' }}</div>
+                        <div class="data-cell" style="font-size: 8px; color: #666;">计算方法：{{ calculation_method or 'Percentile Method' }}</div>
+                    </td>
+                    <td colspan="2">
+                        <div class="label-text">
+                            DISTRIBUTION MODEL
+                        </div>
+                        <div class="data-cell">{{ distribution_model or 'Skewed (Weibull/Lognormal)' }}</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- Section 18-19: Requirements and Capability Indices -->
+        <table>
+            <colgroup>
+                <col style="width: 25%;">
+                <col style="width: 25%;">
+                <col style="width: 25%;">
+                <col style="width: 25%;">
+            </colgroup>
+            <tbody>
+                <tr>
+                    <th colspan="4" class="section-header">
+                        <span class="circle-number">18-19</span>PERFORMANCE / CAPABILITY REQUIREMENTS AND INDICES
+                    </th>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">18</span>PERFORMANCE / CAPABILITY REQUIREMENTS
+                        </div>
+                        <div class="data-cell">Cpk ≥ {{ cpk_requirement or '1.33' }} | Cp ≥ {{ cp_requirement or '1.67' }}</div>
+                    </td>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">18</span>CALCULATION METHOD
+                        </div>
+                        <div class="data-cell">{{ calculation_method or 'Percentile Method' }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="stats-table">
+                        <div class="label-text">
+                            <span class="circle-number">19</span>CALCULATED INDICES WITH CONFIDENCE INTERVALS (95%)
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="stats-table" style="text-align: center;">
+                        <strong>Cp = {{ cp or '0.000' }}</strong><br>
+                        <span style="font-size: 7px; color: #666;">[{{ cp_lower or '0.000' }}, {{ cp_upper or '0.000' }}]</span>
+                    </td>
+                    <td class="stats-table" style="text-align: center;">
+                        <strong>Cpk = {{ cpk or '0.000' }}</strong><br>
+                        <span style="font-size: 7px; color: #666;">[{{ cpk_lower or '0.000' }}, {{ cpk_upper or '0.000' }}]</span>
+                    </td>
+                    <td class="stats-table" style="text-align: center;">
+                        <strong>Pp = {{ pp or '0.000' }}</strong><br>
+                        <span style="font-size: 7px; color: #666;">[{{ pp_lower or '0.000' }}, {{ pp_upper or '0.000' }}]</span>
+                    </td>
+                    <td class="stats-table" style="text-align: center;">
+                        <strong>Ppk = {{ ppk or '0.000' }}</strong><br>
+                        <span style="font-size: 7px; color: #666;">[{{ ppk_lower or '0.000' }}, {{ ppk_upper or '0.000' }}]</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">19</span>ESTIMATED % OUT OF SPECIFICATION
+                        </div>
+                        <div class="data-cell">
+                            Total: {{ percent_out_of_spec or '0.0000%' }} | 
+                            Above USL: {{ ppm_usl or '0.0' }} PPM | 
+                            Below LSL: {{ ppm_lsl or '0.0' }} PPM
+                        </div>
+                    </td>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">21</span>TIME DEPENDENT DISTRIBUTION MODEL
+                        </div>
+                        <div class="data-cell">{{ time_dependent_model or 'Not Applicable' }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="4" class="stats-table" style="text-align: center; padding: 6px;">
+                        <div class="label-text" style="margin-bottom: 4px;">
+                            <span class="circle-number">19</span>CONFIDENCE INTERVALS (95%) - PERCENTILE METHOD
+                        </div>
+                        <div style="font-size: 8px; color: #666;">
+                            Cp: [{{ cp_lower or '0.000' }}, {{ cp_upper or '0.000' }}] | 
+                            Cpk: [{{ cpk_lower or '0.000' }}, {{ cpk_upper or '0.000' }}] | 
+                            Pp: [{{ pp_lower or '0.000' }}, {{ pp_upper or '0.000' }}] | 
+                            Ppk: [{{ ppk_lower or '0.000' }}, {{ ppk_upper or '0.000' }}]
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- Detailed Statistics -->
+        <table>
+            <colgroup>
+                <col style="width: 20%;">
+                <col style="width: 30%;">
+                <col style="width: 20%;">
+                <col style="width: 30%;">
+            </colgroup>
+            <tbody>
+                <tr>
+                    <th colspan="4" class="section-header">
+                        DETAILED STATISTICS
+                    </th>
+                </tr>
+                <tr>
+                    <td>
+                        <div class="label-text">MEDIAN</div>
+                        <div class="data-cell">{{ median or '0.0000' }}</div>
+                    </td>
+                    <td>
+                        <div class="label-text">SKEWNESS</div>
+                        <div class="data-cell">{{ skewness or '0.0000' }}</div>
+                    </td>
+                    <td>
+                        <div class="label-text">KURTOSIS</div>
+                        <div class="data-cell">{{ kurtosis or '0.0000' }}</div>
+                    </td>
+                    <td>
+                        <div class="label-text">TRANSFORMATION</div>
+                        <div class="data-cell">{{ transformation or 'None' }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="4">
+                        <div class="label-text">
+                            <span class="circle-number">22</span>MEASUREMENT UNCERTAINTY AND GUARD BANDS
+                        </div>
+                        <div class="data-cell">{{ measurement_uncertainty or 'Not Applicable' }}</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- Warning and Recommendations -->
+        <div class="warning-box">
+            <div class="warning-title">
+                <span class="circle-number">20</span>CONCLUSIONS & RECOMMENDATIONS / CORRECTIVE ACTIONS
+            </div>
+            <div class="warning-text">
+                <strong>偏态分布警告：</strong>数据不符合正态分布假设 (P-value < 0.05)。<br>
+                <strong>可能的偏态原因：</strong>
+                <ul style="margin: 6px 0 0 16px; padding: 0;">
+                    <li>工具磨损或刀具寿命到期</li>
+                    <li>材料硬度或特性变化</li>
+                    <li>测量系统问题或量具误差</li>
+                    <li>过程调整过度或人为干预</li>
+                    <li>数据收集方法不当</li>
+                </ul>
+                <strong style="margin-top: 6px; display: block;">建议措施：</strong>
+                <ul style="margin: 6px 0 0 16px; padding: 0;">
+                    <li>使用百分位法 (Percentile Method) 计算能力指数 - 无需数据转换假设</li>
+                    <li>考虑数据转换 (Box-Cox 或 Johnson Transformation) 后再分析</li>
+                    <li>调查并消除偏态的根本原因</li>
+                    <li>增加样本量以提高分析准确性</li>
+                    <li>考虑使用非参数统计方法进行过程评估</li>
+                </ul>
+                <div style="margin-top: 6px;">
+                    {{ conclusion or 'Process requires investigation due to non-normal distribution. Percentile method recommended for capability analysis.' }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <table>
+            <tr>
+                <td class="footer-cell">
+                    <div class="label-text">
+                        Report Generated: {{ generated_time or '' }} | Analysis ID: {{ analysis_id or '' }}
+                    </div>
+                    <div class="label-text" style="margin-top: 4px; color: #666;">
+                        This report is automatically generated by Quality Information System
+                    </div>
+                </td>
+            </tr>
+        </table>
+    </div>
+</body>
+</html>

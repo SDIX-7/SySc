@@ -63,7 +63,8 @@ from ..services.capability_service import (
 )
 from ..services.email_service import send_control_chart_alert
 from ..services.auth_service import get_password_hash
-from ..services.report_service import export_control_plan_excel, export_control_plans_batch_excel, export_ocap_excel
+from ..services.report_service import export_control_plan_excel, export_control_plans_batch_excel, export_ocap_excel, export_control_plan_detailed_report, export_capability_analysis_report
+from ..services.report_service_new import export_control_plan_html, export_capability_analysis_html, export_ocap_html
 
 router = APIRouter(prefix="/api", tags=["api"])
 
@@ -1668,6 +1669,36 @@ async def export_control_plan_excel_endpoint(plan_id: int, db: Session = Depends
 @router.post("/control-plans/export/batch")
 async def export_control_plans_batch_endpoint(plan_ids: List[int], db: Session = Depends(get_db)):
     return export_control_plans_batch_excel(plan_ids, db)
+
+
+@router.get("/control-plans/{plan_id}/export/report")
+async def export_control_plan_report_endpoint(plan_id: int, db: Session = Depends(get_db)):
+    """导出控制计划详细报告 (HTML 格式) - 旧版本"""
+    return export_control_plan_detailed_report(plan_id, db)
+
+
+@router.get("/control-plans/{plan_id}/export/report/html")
+async def export_control_plan_html_endpoint(plan_id: int, db: Session = Depends(get_db)):
+    """导出控制计划 HTML 报告 (AIAG/VDA 标准格式) - 新版本"""
+    return export_control_plan_html(plan_id, db)
+
+
+@router.get("/capability-analysis/{analysis_id}/export/report")
+async def export_capability_report_endpoint(analysis_id: int, db: Session = Depends(get_db)):
+    """导出 SPC 研究报告 (HTML 格式) - 旧版本"""
+    return export_capability_analysis_report(analysis_id, db)
+
+
+@router.get("/capability-analysis/{analysis_id}/export/report/html")
+async def export_capability_analysis_html_endpoint(analysis_id: int, db: Session = Depends(get_db)):
+    """导出过程能力分析报告 HTML (AIAG/VDA SPC 标准格式) - 新版本"""
+    return export_capability_analysis_html(analysis_id, db)
+
+
+@router.get("/ocaps/{ocap_id}/export/report/html")
+async def export_ocap_html_endpoint(ocap_id: int, db: Session = Depends(get_db)):
+    """导出 OCAP 响应计划 HTML 报告"""
+    return export_ocap_html(ocap_id, db)
 
 
 @router.get("/production-lines/{line_id}/control-plans", response_model=List[ControlPlanResponse])

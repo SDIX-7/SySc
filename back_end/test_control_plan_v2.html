@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Plan</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        body {
+            font-family: Arial, 'Microsoft YaHei', sans-serif;
+            font-size: 9px;
+            padding: 10mm;
+            background: white;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 280mm;
+            margin: 0 auto;
+        }
+        
+        .main-title {
+            font-size: 16px;
+            font-weight: bold;
+            text-align: left;
+            margin-bottom: 5px;
+            padding-left: 2px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        
+        th, td {
+            border: 1.5px solid #000;
+            padding: 3px 4px;
+            text-align: left;
+            vertical-align: middle;
+            word-wrap: break-word;
+        }
+        
+        th {
+            background-color: #f0f0f0 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .circle-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 13px;
+            height: 13px;
+            border: 1px solid #000;
+            border-radius: 50%;
+            font-size: 7px;
+            font-weight: bold;
+            margin-right: 2px;
+            flex-shrink: 0;
+        }
+        
+        .label-text {
+            font-size: 7px;
+            font-weight: bold;
+            line-height: 1.2;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            font-size: 9px;
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            width: 12px;
+            height: 12px;
+            margin: 0;
+        }
+        
+        .page-info {
+            font-size: 9px;
+        }
+        
+        .page-line {
+            display: inline-block;
+            width: 40px;
+            border-bottom: 1px solid #000;
+            margin: 0 2px;
+        }
+        
+        .data-cell {
+            font-size: 9px;
+            min-height: 16px;
+            background: white;
+        }
+        
+        .main-table th {
+            font-size: 7px;
+            padding: 3px 2px;
+        }
+        
+        .main-table td {
+            font-size: 9px;
+            padding: 2px 3px;
+            height: 20px;
+        }
+        
+        .empty-row td {
+            height: 18px;
+        }
+        
+        .center {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-title">CONTROL PLAN</div>
+        
+        <!-- Header Table -->
+        <table>
+            <colgroup>
+                <col style="width: 18%;">
+                <col style="width: 22%;">
+                <col style="width: 18%;">
+                <col style="width: 22%;">
+                <col style="width: 10%;">
+                <col style="width: 10%;">
+            </colgroup>
+            <tbody>
+                <tr>
+                    <td colspan="6" style="border: none; padding: 2px 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="prototype" >
+                                    <label for="prototype">
+                                        <span class="circle-number">1</span>Prototype
+                                    </label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="pre-launch" >
+                                    <label for="pre-launch">Pre-Launch</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="production" checked>
+                                    <label for="production">Production</label>
+                                </div>
+                            </div>
+                            <div class="page-info">
+                                Page <span class="page-line">1</span> of <span class="page-line">1</span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">2</span>CONTROL PLAN NUMBER
+                        </div>
+                        <div class="data-cell">CP-LINE-001-20260308</div>
+                    </td>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">7</span>KEY CONTACT/PHONE
+                        </div>
+                        <div class="data-cell">张工程师</div>
+                    </td>
+                    <td>
+                        <div class="label-text">
+                            <span class="circle-number">10</span>DATE (ORIG.)
+                        </div>
+                        <div class="data-cell"></div>
+                    </td>
+                    <td>
+                        <div class="label-text">
+                            <span class="circle-number">11</span>DATE (REV.)
+                        </div>
+                        <div class="data-cell"></div>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">3</span>PART NUMBER/LATEST CHANGE LEVEL
+                        </div>
+                        <div class="data-cell">ENG-BLOCK-001 </div>
+                    </td>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">8</span>CORE TEAM
+                        </div>
+                        <div class="data-cell">工艺部,质量部,生产部</div>
+                    </td>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">12</span>CUSTOMER ENGINEERING APPROVAL/DATE (If Req'd.)
+                        </div>
+                        <div class="data-cell"></div>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">4</span>PART NAME/DESCRIPTION
+                        </div>
+                        <div class="data-cell">发动机缸体</div>
+                    </td>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">9</span>ORGANIZATION/PLANT APPROVAL/DATE
+                        </div>
+                        <div class="data-cell">李经理</div>
+                    </td>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">13</span>CUSTOMER QUALITY APPROVAL/DATE (If Req'd.)
+                        </div>
+                        <div class="data-cell"></div>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <td>
+                        <div class="label-text">
+                            <span class="circle-number">5</span>ORGANIZATION/PLANT
+                        </div>
+                        <div class="data-cell">第一制造工厂</div>
+                    </td>
+                    <td>
+                        <div class="label-text">
+                            <span class="circle-number">6</span>ORGANIZATION CODE (SUPPLIER CODE)
+                        </div>
+                        <div class="data-cell">PLANT-001</div>
+                    </td>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">14</span>OTHER APPROVAL/DATE (If Req'd.)
+                        </div>
+                        <div class="data-cell"></div>
+                    </td>
+                    <td colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">14</span>OTHER APPROVAL/DATE (If Req'd.)
+                        </div>
+                        <div class="data-cell"></div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <!-- Main Data Table -->
+        <table class="main-table">
+            <colgroup>
+                <col style="width: 7%;">
+                <col style="width: 11%;">
+                <col style="width: 11%;">
+                <col style="width: 3%;">
+                <col style="width: 7%;">
+                <col style="width: 7%;">
+                <col style="width: 5%;">
+                <col style="width: 13%;">
+                <col style="width: 8%;">
+                <col style="width: 4%;">
+                <col style="width: 4%;">
+                <col style="width: 8%;">
+                <col style="width: 12%;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th rowspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">15</span>PART/ PROCESS<br>NUMBER
+                        </div>
+                    </th>
+                    <th rowspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">16</span>PROCESS NAME/<br>OPERATION DESCRIPTION
+                        </div>
+                    </th>
+                    <th rowspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">17</span>MACHINE, DEVICE,<br>JIG TOOLS FOR MFG.
+                        </div>
+                    </th>
+                    <th colspan="3">
+                        <div class="label-text">CHARACTERISTICS</div>
+                    </th>
+                    <th rowspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">21</span>SPECIAL CHAR.<br>CLASS
+                        </div>
+                    </th>
+                    <th colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">22</span>PRODUCT/PROCESS<br>SPECIFICATION/ TOLERANCE
+                        </div>
+                    </th>
+                    <th rowspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">23</span>EVALUATION/<br>MEASUREMENT<br>TECHNIQUE
+                        </div>
+                    </th>
+                    <th colspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">24</span>SAMPLE
+                        </div>
+                    </th>
+                    <th rowspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">25</span>CONTROL<br>METHOD
+                        </div>
+                    </th>
+                    <th rowspan="2">
+                        <div class="label-text">
+                            <span class="circle-number">26</span>REACTION<br>PLAN
+                        </div>
+                    </th>
+                </tr>
+                <tr>
+                    <th>
+                        <div class="label-text">
+                            <span class="circle-number">18</span>NO.
+                        </div>
+                    </th>
+                    <th>
+                        <div class="label-text">PRODUCT</div>
+                    </th>
+                    <th>
+                        <div class="label-text">PROCESS</div>
+                    </th>
+                    <th>
+                        <div class="label-text">SIZE</div>
+                    </th>
+                    <th>
+                        <div class="label-text">FREQ.</div>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                
+                <tr>
+                    <td class="data-cell">P01</td>
+                    <td class="data-cell">
+                        <div>缸孔镗削</div>
+                        <div>精镗缸孔至最终尺寸</div>
+                    </td>
+                    <td class="data-cell"></td>
+                    <td class="data-cell center">CP-001</td>
+                    <td class="data-cell">缸孔直径</td>
+                    <td class="data-cell"></td>
+                    <td class="data-cell center"></td>
+                    <td class="data-cell" colspan="2">Φ85.00±0.02mm</td>
+                    <td class="data-cell">内径千分尺</td>
+                    <td class="data-cell center">5件</td>
+                    <td class="data-cell center">每2小时</td>
+                    <td class="data-cell">Xbar-R控制图</td>
+                    <td class="data-cell">停止生产，通知工艺工程师</td>
+                </tr>
+                
+                <tr>
+                    <td class="data-cell">P02</td>
+                    <td class="data-cell">
+                        <div>缸孔珩磨</div>
+                        <div>珩磨缸孔表面</div>
+                    </td>
+                    <td class="data-cell"></td>
+                    <td class="data-cell center">CP-002</td>
+                    <td class="data-cell">缸孔表面粗糙度</td>
+                    <td class="data-cell"></td>
+                    <td class="data-cell center"></td>
+                    <td class="data-cell" colspan="2">Ra0.4-0.8μm</td>
+                    <td class="data-cell">粗糙度仪</td>
+                    <td class="data-cell center">3件</td>
+                    <td class="data-cell center">每4小时</td>
+                    <td class="data-cell">Xbar-R控制图</td>
+                    <td class="data-cell">调整珩磨参数</td>
+                </tr>
+                
+                <tr>
+                    <td class="data-cell">P03</td>
+                    <td class="data-cell">
+                        <div>主轴承孔加工</div>
+                        <div>精镗主轴承孔</div>
+                    </td>
+                    <td class="data-cell"></td>
+                    <td class="data-cell center">CP-003</td>
+                    <td class="data-cell">主轴承孔同轴度</td>
+                    <td class="data-cell"></td>
+                    <td class="data-cell center"></td>
+                    <td class="data-cell" colspan="2">≤0.03mm</td>
+                    <td class="data-cell">三坐标测量机</td>
+                    <td class="data-cell center">1件</td>
+                    <td class="data-cell center">每班</td>
+                    <td class="data-cell">单值控制图</td>
+                    <td class="data-cell">检查夹具定位</td>
+                </tr>
+                
+                
+                <!-- Empty rows for printing -->
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+                <tr class="empty-row">
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td colspan="2"></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
