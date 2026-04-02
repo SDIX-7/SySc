@@ -395,6 +395,291 @@
             left: 0;
         }
         
+        /* 证据管理区域 */
+        .evidence-section {
+            margin: 20px 0;
+        }
+        
+        .evidence-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 16px 0;
+        }
+        
+        .evidence-card {
+            padding: 20px;
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+            border-radius: 10px;
+            border: 2px solid #86efac;
+            transition: all 0.3s ease;
+        }
+        
+        .evidence-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(34, 197, 94, 0.2);
+        }
+        
+        .evidence-type {
+            font-size: 11px;
+            color: #166534;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        
+        .evidence-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #14532d;
+            margin-bottom: 8px;
+        }
+        
+        .evidence-desc {
+            font-size: 12px;
+            color: #166534;
+            margin-bottom: 12px;
+        }
+        
+        .evidence-meta {
+            font-size: 11px;
+            color: #15803d;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        /* 步骤进度条 */
+        .step-progress {
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            border-radius: 10px;
+            border: 2px solid #cbd5e1;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .progress-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        
+        .progress-percentage {
+            font-size: 24px;
+            font-weight: bold;
+            color: #dc2626;
+        }
+        
+        .progress-bar-container {
+            height: 24px;
+            background: #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(135deg, #ef4444, #f87171);
+            border-radius: 12px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 12px;
+        }
+        
+        .progress-bar span {
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .progress-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .progress-stat {
+            text-align: center;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .progress-stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #dc2626;
+        }
+        
+        .progress-stat-label {
+            font-size: 10px;
+            color: #64748b;
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+        
+        /* 增强时间线样式 */
+        .timeline-status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .timeline-status-indicator.completed {
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+            color: #166534;
+        }
+        
+        .timeline-status-indicator.in-progress {
+            background: linear-gradient(135deg, #fef9c3, #fef08a);
+            color: #854d0e;
+        }
+        
+        .timeline-status-indicator.pending {
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            color: #475569;
+        }
+        
+        .timeline-duration {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        
+        /* 根本原因增强样式 */
+        .root-cause-analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .root-cause-category {
+            padding: 20px;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-radius: 10px;
+            border-left: 5px solid #f59e0b;
+        }
+        
+        .root-cause-category-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #92400e;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .root-cause-category-count {
+            background: #f59e0b;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+        
+        .root-cause-item {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 1px solid #fcd34d;
+        }
+        
+        .root-cause-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .root-cause-description {
+            font-size: 13px;
+            color: #78350f;
+            margin-bottom: 6px;
+        }
+        
+        .root-cause-evidence {
+            font-size: 11px;
+            color: #b45309;
+            font-style: italic;
+        }
+        
+        /* 5-Why 分析增强 */
+        .five-why-analysis {
+            margin: 20px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #e0e7ff, #c7d2fe);
+            border-radius: 10px;
+            border: 2px solid #818cf8;
+        }
+        
+        .five-why-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #3730a3;
+            margin-bottom: 16px;
+        }
+        
+        .why-chain {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .why-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .why-number {
+            width: 32px;
+            height: 32px;
+            background: #4f46e5;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        
+        .why-content {
+            flex: 1;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #c7d2fe;
+        }
+        
+        .why-label {
+            font-size: 11px;
+            color: #6366f1;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .why-text {
+            font-size: 13px;
+            color: #3730a3;
+        }
+        
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -605,6 +890,39 @@
             
             <div class="section">
                 <h2 class="section-title">响应步骤明细 (Response Steps Details)</h2>
+                
+                {% if steps %}
+                <div class="step-progress">
+                    <div class="progress-header">
+                        <div class="progress-title">Overall Progress (总体进度)</div>
+                        <div class="progress-percentage">{{ progress_percentage or 0 }}%</div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: {{ progress_percentage or 0 }}%;">
+                            <span>{{ progress_percentage or 0 }}%</span>
+                        </div>
+                    </div>
+                    <div class="progress-stats">
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">{{ total_steps or 0 }}</div>
+                            <div class="progress-stat-label">Total Steps</div>
+                        </div>
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">{{ completed_steps or 0 }}</div>
+                            <div class="progress-stat-label">Completed</div>
+                        </div>
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">{{ in_progress_steps or 0 }}</div>
+                            <div class="progress-stat-label">In Progress</div>
+                        </div>
+                        <div class="progress-stat">
+                            <div class="progress-stat-value">{{ pending_steps or 0 }}</div>
+                            <div class="progress-stat-label">Pending</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
                 <table class="steps-table">
                     <thead>
                         <tr>
@@ -641,13 +959,49 @@
                     <div class="root-cause-title">Identified Root Causes (已识别的根本原因)</div>
                     <ul class="root-cause-list">
                         {% for cause in root_causes %}
-                        <li>{{ cause.description or 'N/A' }} 
+                        <li>{{ cause.description or 'N/A' }}
                             {% if cause.category %}【{{ cause.category }}】{% endif %}
                         </li>
                         {% endfor %}
                     </ul>
                 </div>
+                
+                {% if five_why_analysis %}
+                <div class="five-why-analysis">
+                    <div class="five-why-title">5-Why Analysis (5个为什么分析)</div>
+                    <div class="why-chain">
+                        {% for why in five_why_analysis %}
+                        <div class="why-item">
+                            <div class="why-number">{{ loop.index }}</div>
+                            <div class="why-content">
+                                <div class="why-label">{{ why.label or 'Why ' + loop.index|string }}</div>
+                                <div class="why-text">{{ why.text or 'N/A' }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
+            
+            {% if evidence_list %}
+            <div class="section">
+                <h2 class="section-title">证据管理 (Evidence Management)</h2>
+                <div class="evidence-grid">
+                    {% for evidence in evidence_list %}
+                    <div class="evidence-card">
+                        <div class="evidence-type">{{ evidence.type or 'Document' }}</div>
+                        <div class="evidence-title">{{ evidence.title or 'N/A' }}</div>
+                        <div class="evidence-desc">{{ evidence.description or 'N/A' }}</div>
+                        <div class="evidence-meta">
+                            <span>{{ evidence.date or 'N/A' }}</span>
+                            <span>{{ evidence.uploaded_by or 'N/A' }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
             
             <div class="section">
                 <h2 class="section-title">纠正措施 (Corrective Actions)</h2>

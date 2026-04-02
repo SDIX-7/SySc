@@ -105,16 +105,34 @@
             background: white;
         }
         
+        .chart-area {
+            height: 280px;
+            background: white;
+            text-align: center;
+            vertical-align: middle;
+            border: 2px solid #000;
+            padding: 0;
+            margin: 0;
+        }
+        
         .chart-box {
-            border: 1px dashed #666;
-            background: #fafafa;
-            padding: 20px;
-            margin: 10px;
-            height: 220px;
+            border: none;
+            background: white;
+            padding: 8px;
+            margin: 0;
+            height: 270px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-direction: column;
+            width: 100%;
+        }
+        
+        .chart-box img {
+            width: 100%;
+            height: 230px;
+            object-fit: contain;
+            display: block;
         }
         
         .chart-placeholder {
@@ -203,19 +221,19 @@
             <tbody>
                 <tr>
                     <th colspan="4" class="section-header">
-                        <span class="circle-number">1-6</span>PROCESS AND PART INFORMATION
+                        <!-- <span class="circle-number">1-6</span> -->PROCESS AND PART INFORMATION
                     </th>
                 </tr>
                 <tr>
                     <td colspan="2">
                         <div class="label-text">
-                            <span class="circle-number">1</span>PROCESS NAME / MACHINE / LOCATION
+                            <!-- <span class="circle-number">1</span> -->PROCESS NAME / MACHINE / LOCATION
                         </div>
                         <div class="data-cell">{{ process_name or '' }} | {{ machine_name or '' }} | {{ study_location or '' }}</div>
                     </td>
                     <td colspan="2">
                         <div class="label-text">
-                            <span class="circle-number">2</span>PROCESS REF. NO. / MACHINE REF. NO.
+                            <!-- <span class="circle-number">2</span> -->PROCESS REF. NO. / MACHINE REF. NO.
                         </div>
                         <div class="data-cell">{{ process_ref_number or '' }} | {{ machine_ref_number or '' }}</div>
                     </td>
@@ -223,13 +241,13 @@
                 <tr>
                     <td colspan="2">
                         <div class="label-text">
-                            <span class="circle-number">3</span>PEOPLE WHO PERFORMED STUDY
+                            <!-- <span class="circle-number">3</span> -->PEOPLE WHO PERFORMED STUDY
                         </div>
                         <div class="data-cell">{{ operator_name or '' }}</div>
                     </td>
                     <td colspan="2">
                         <div class="label-text">
-                            <span class="circle-number">4</span>TIME AND DURATION OF DATA COLLECTION
+                            <!-- <span class="circle-number">4</span> -->TIME AND DURATION OF DATA COLLECTION
                         </div>
                         <div class="data-cell">{{ study_date or '' }} | {{ start_time or '' }} - {{ end_time or '' }}</div>
                     </td>
@@ -237,13 +255,13 @@
                 <tr>
                     <td colspan="2">
                         <div class="label-text">
-                            <span class="circle-number">5</span>PART NAME / REFERENCE NUMBER
+                            <!-- <span class="circle-number">5</span> -->PART NAME / REFERENCE NUMBER
                         </div>
                         <div class="data-cell">{{ part_name_id or '' }}</div>
                     </td>
                     <td colspan="2">
                         <div class="label-text">
-                            <span class="circle-number">6</span>CHARACTERISTIC & SPECIFICATION LIMITS
+                            <!-- <span class="circle-number">6</span> -->CHARACTERISTIC & SPECIFICATION LIMITS
                         </div>
                         <div class="data-cell">{{ characteristic_name_id or '' }} | LSL: {{ lsl or '' }} | USL: {{ usl or '' }}</div>
                     </td>
@@ -262,19 +280,19 @@
             <tbody>
                 <tr>
                     <th colspan="4" class="section-header">
-                        <span class="circle-number">7-10</span>STUDY CONDITIONS
+                        <!-- <span class="circle-number">7-10</span> -->STUDY CONDITIONS
                     </th>
                 </tr>
                 <tr>
                     <td colspan="2">
                         <div class="label-text">
-                            <span class="circle-number">7</span>TECHNICAL CONDITIONS (Batches, Operation, Tools)
+                            <!-- <span class="circle-number">7</span> -->TECHNICAL CONDITIONS (Batches, Operation, Tools)
                         </div>
                         <div class="data-cell">{{ technical_conditions or '' }}</div>
                     </td>
                     <td colspan="2">
                         <div class="label-text">
-                            <span class="circle-number">8</span>DEVIATIONS FROM STABLE CONDITIONS
+                            <!-- <span class="circle-number">8</span> -->DEVIATIONS FROM STABLE CONDITIONS
                         </div>
                         <div class="data-cell">{{ deviations or '' }}</div>
                     </td>
@@ -282,19 +300,19 @@
                 <tr>
                     <td>
                         <div class="label-text">
-                            <span class="circle-number">9</span>NUMBER OF VALUES
+                            <!-- <span class="circle-number">9</span> -->NUMBER OF VALUES
                         </div>
                         <div class="data-cell">{{ sample_size or '' }}</div>
                     </td>
                     <td>
                         <div class="label-text">
-                            <span class="circle-number">10</span>SAMPLING FREQUENCY / SUBGROUP SIZE
+                            <!-- <span class="circle-number">10</span> -->SAMPLING FREQUENCY / SUBGROUP SIZE
                         </div>
                         <div class="data-cell">{{ sampling_frequency or '' }} / {{ subgroup_size or '' }}</div>
                     </td>
                     <td colspan="2">
                         <div class="label-text">
-                            <span class="circle-number">17</span>DISTRIBUTION MODEL
+                            <!-- <span class="circle-number">17</span> -->DISTRIBUTION MODEL
                         </div>
                         <div class="data-cell">{{ distribution_model or 'Skewed (Weibull/Lognormal)' }}</div>
                     </td>
@@ -311,15 +329,19 @@
             <tbody>
                 <tr>
                     <th colspan="2" class="section-header">
-                        <span class="circle-number">11-14</span>GRAPHS AND CHARTS
+                        <!-- <span class="circle-number">11-14</span> -->GRAPHS AND CHARTS
                     </th>
                 </tr>
                 <tr>
-                    <td>
+                    <td class="chart-area">
                         <div class="chart-box">
+                            <div class="chart-title"></div>
+                            {% if histogram_img %}
+                            <img src="{{ histogram_img }}" alt="Histogram" style="width: 100%; height: 230px; object-fit: contain;">
+                            {% else %}
                             <div class="chart-placeholder">
                                 <div style="font-weight: bold; margin-bottom: 8px;">
-                                    <span class="circle-number">11</span>HISTOGRAM
+                                    <!-- <span class="circle-number">11</span> -->HISTOGRAM
                                 </div>
                                 <div>[直方图 - 偏态分布]</div>
                                 <div style="font-size: 8px; color: #999; margin-top: 4px;">
@@ -329,28 +351,38 @@
                                     * 可能需要数据转换 (Box-Cox/Johnson)
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
                     </td>
-                    <td>
+                    <td class="chart-area">
                         <div class="chart-box">
+                            <div class="chart-title"></div>
+                            {% if run_chart_img %}
+                            <img src="{{ run_chart_img }}" alt="Run Chart" style="width: 100%; height: 230px; object-fit: contain;">
+                            {% else %}
                             <div class="chart-placeholder">
                                 <div style="font-weight: bold; margin-bottom: 8px;">
-                                    <span class="circle-number">12</span>RUN CHART
+                                    <!-- <span class="circle-number">12</span> -->RUN CHART
                                 </div>
                                 <div>[运行图 - 数据随时间变化]</div>
                                 <div style="font-size: 8px; color: #999; margin-top: 4px;">
                                     定性评估数据随时间的变化
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
                 <tr>
-                    <td>
+                    <td class="chart-area">
                         <div class="chart-box">
+                            <div class="chart-title"></div>
+                            {% if probability_plot_img %}
+                            <img src="{{ probability_plot_img }}" alt="Probability Plot" style="width: 100%; height: 230px; object-fit: contain;">
+                            {% else %}
                             <div class="chart-placeholder">
                                 <div style="font-weight: bold; margin-bottom: 8px;">
-                                    <span class="circle-number">13</span>PROBABILITY PLOT (Non-Normal)
+                                    <!-- <span class="circle-number">13</span> -->PROBABILITY PLOT (Non-Normal)
                                 </div>
                                 <div>[概率图 - 非正态分布]</div>
                                 <div style="font-size: 8px; color: #f57c00; margin-top: 4px; font-weight: bold;">
@@ -360,13 +392,18 @@
                                     数据不符合正态分布假设
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
                     </td>
-                    <td>
+                    <td class="chart-area">
                         <div class="chart-box">
+                            <div class="chart-title"></div>
+                            {% if control_chart_img %}
+                            <img src="{{ control_chart_img }}" alt="Control Chart" style="width: 100%; height: 230px; object-fit: contain;">
+                            {% else %}
                             <div class="chart-placeholder">
                                 <div style="font-weight: bold; margin-bottom: 8px;">
-                                    <span class="circle-number">14</span>PERCENTILE METHOD
+                                    <!-- <span class="circle-number">14</span> -->PERCENTILE METHOD
                                 </div>
                                 <div>[百分位法 - 非参数方法]</div>
                                 <div style="font-size: 8px; color: #999; margin-top: 4px;">
@@ -374,6 +411,7 @@
                                     无需数据转换假设
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
@@ -391,20 +429,20 @@
             <tbody>
                 <tr>
                     <th colspan="4" class="section-header">
-                        <span class="circle-number">15-16</span>PROCESS PARAMETERS
+                        <!-- <span class="circle-number">15-16</span> -->PROCESS PARAMETERS
                     </th>
                 </tr>
                 <tr>
                     <td>
                         <div class="label-text">
-                            <span class="circle-number">15</span>PROCESS LOCATION (Median)
+                            <!-- <span class="circle-number">15</span> -->PROCESS LOCATION (Median)
                         </div>
                         <div class="data-cell">Median = {{ median or '0.0000' }}</div>
                         <div class="data-cell" style="font-size: 8px; color: #666;">计算方法：{{ calculation_method or 'Percentile Method' }}</div>
                     </td>
                     <td>
                         <div class="label-text">
-                            <span class="circle-number">16</span>PROCESS VARIATION (Sigma)
+                            <!-- <span class="circle-number">16</span> -->PROCESS VARIATION (Sigma)
                         </div>
                         <div class="data-cell">Sigma (Within) = {{ sigma_within or '0.0000' }}</div>
                         <div class="data-cell" style="font-size: 8px; color: #666;">计算方法：{{ calculation_method or 'Percentile Method' }}</div>
@@ -430,19 +468,19 @@
             <tbody>
                 <tr>
                     <th colspan="4" class="section-header">
-                        <span class="circle-number">18-19</span>PERFORMANCE / CAPABILITY REQUIREMENTS AND INDICES
+                        <!-- <span class="circle-number">18-19</span> -->PERFORMANCE / CAPABILITY REQUIREMENTS AND INDICES
                     </th>
                 </tr>
                 <tr>
                     <td colspan="2">
                         <div class="label-text">
-                            <span class="circle-number">18</span>PERFORMANCE / CAPABILITY REQUIREMENTS
+                            <!-- <span class="circle-number">18</span> -->PERFORMANCE / CAPABILITY REQUIREMENTS
                         </div>
                         <div class="data-cell">Cpk ≥ {{ cpk_requirement or '1.33' }} | Cp ≥ {{ cp_requirement or '1.67' }}</div>
                     </td>
                     <td colspan="2">
                         <div class="label-text">
-                            <span class="circle-number">18</span>CALCULATION METHOD
+                            <!-- <span class="circle-number">18</span> -->CALCULATION METHOD
                         </div>
                         <div class="data-cell">{{ calculation_method or 'Percentile Method' }}</div>
                     </td>
@@ -450,7 +488,7 @@
                 <tr>
                     <td colspan="4" class="stats-table">
                         <div class="label-text">
-                            <span class="circle-number">19</span>CALCULATED INDICES WITH CONFIDENCE INTERVALS (95%)
+                            <!-- <span class="circle-number">19</span> -->CALCULATED INDICES WITH CONFIDENCE INTERVALS (95%)
                         </div>
                     </td>
                 </tr>
@@ -475,7 +513,7 @@
                 <tr>
                     <td colspan="2">
                         <div class="label-text">
-                            <span class="circle-number">19</span>ESTIMATED % OUT OF SPECIFICATION
+                            <!-- <span class="circle-number">19</span> -->ESTIMATED % OUT OF SPECIFICATION
                         </div>
                         <div class="data-cell">
                             Total: {{ percent_out_of_spec or '0.0000%' }} | 
@@ -485,7 +523,7 @@
                     </td>
                     <td colspan="2">
                         <div class="label-text">
-                            <span class="circle-number">21</span>TIME DEPENDENT DISTRIBUTION MODEL
+                            <!-- <span class="circle-number">21</span> -->TIME DEPENDENT DISTRIBUTION MODEL
                         </div>
                         <div class="data-cell">{{ time_dependent_model or 'Not Applicable' }}</div>
                     </td>
@@ -493,7 +531,7 @@
                 <tr>
                     <td colspan="4" class="stats-table" style="text-align: center; padding: 6px;">
                         <div class="label-text" style="margin-bottom: 4px;">
-                            <span class="circle-number">19</span>CONFIDENCE INTERVALS (95%) - PERCENTILE METHOD
+                            <!-- <span class="circle-number">19</span> -->CONFIDENCE INTERVALS (95%) - PERCENTILE METHOD
                         </div>
                         <div style="font-size: 8px; color: #666;">
                             Cp: [{{ cp_lower or '0.000' }}, {{ cp_upper or '0.000' }}] | 
@@ -541,7 +579,7 @@
                 <tr>
                     <td colspan="4">
                         <div class="label-text">
-                            <span class="circle-number">22</span>MEASUREMENT UNCERTAINTY AND GUARD BANDS
+                            <!-- <span class="circle-number">22</span> -->MEASUREMENT UNCERTAINTY AND GUARD BANDS
                         </div>
                         <div class="data-cell">{{ measurement_uncertainty or 'Not Applicable' }}</div>
                     </td>
@@ -552,7 +590,7 @@
         <!-- Warning and Recommendations -->
         <div class="warning-box">
             <div class="warning-title">
-                <span class="circle-number">20</span>CONCLUSIONS & RECOMMENDATIONS / CORRECTIVE ACTIONS
+                <!-- <span class="circle-number">20</span> -->CONCLUSIONS & RECOMMENDATIONS / CORRECTIVE ACTIONS
             </div>
             <div class="warning-text">
                 <strong>偏态分布警告：</strong>数据不符合正态分布假设 (P-value < 0.05)。<br>

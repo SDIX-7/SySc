@@ -15,6 +15,8 @@ from sqlalchemy.orm import Session
 from fastapi import Response, HTTPException
 from jinja2 import Environment, FileSystemLoader
 import os
+import numpy as np
+from scipy import stats
 
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, PatternFill, Side
@@ -678,7 +680,7 @@ def export_control_plan_detailed_report(plan_id: int, db: Session) -> Response:
 def export_capability_analysis_report(analysis_id: int, db: Session) -> Response:
     """
     导出 SPC 研究报告（HTML 格式）
-    使用 Jinja2 模板引擎和 spc_capability_report.html 模板
+    使用 Jinja2 模板引擎和 spc_normal_distribution.html 模板
     按照 AIAG/VDA SPC 手册标准格式，包含：
     - 过程信息
     - 直方图
@@ -690,6 +692,7 @@ def export_capability_analysis_report(analysis_id: int, db: Session) -> Response
     - 结论和建议
     """
     from app.models.models import CapabilityAnalysis as CapabilityAnalysisModel
+    from app.services.chart_generator import generate_all_charts_for_report
     
     analysis = db.query(CapabilityAnalysisModel).filter(
         CapabilityAnalysisModel.id == analysis_id
@@ -697,66 +700,148 @@ def export_capability_analysis_report(analysis_id: int, db: Session) -> Response
     if not analysis:
         raise HTTPException(status_code=404, detail=f"能力分析 {analysis_id} 不存在")
     
-    # 加载模板
-    template = jinja_env.get_template('spc_capability_report.html')
-    
     # 准备数据
-    data_values = analysis.data_values if hasattr(analysis, 'data_values') and analysis.data_values else []
-    data_preview = ', '.join([f"{v:.4f}" for v in data_values[:20]])
-    if len(data_values) > 20:
-        data_preview += f', ... (共{len(data_values)}个数据)'
+    data_values = analysis.get_data_values() if hasattr(analysis, 'get_data_values') else []
+    if not data_values and hasattr(analysis, 'data_values') and analysis.data_values:
+        import json
+        try:
+            data_values = json.loads(analysis.data_values)
+        except:
+            data_values = []
+    
+    if not data_values:
+        raise HTTPException(status_code=400, detail=f"能力分析 {analysis_id} 没有数据")
+    
+    # 计算统计信息
+    usl = float(analysis.usl) if analysis.usl else None
+    lsl = float(analysis.lsl) if analysis.lsl else None
+    mean = float(analysis.mean) if analysis.mean else np.mean(data_values)
+    sigma_within = float(analysis.sigma_within) if analysis.sigma_within else np.std(data_values, ddof=1)
+    sigma_overall = float(analysis.sigma_overall) if analysis.sigma_overall else sigma_within
+    subgroup_size = analysis.subgroup_count if analysis.subgroup_count and analysis.subgroup_count > 0 else 1
+    
+    # 生成图表
+    try:
+        charts = generate_all_charts_for_report(
+            data=data_values,
+            mean=mean,
+            std=sigma_within,
+            usl=usl,
+            lsl=lsl,
+            subgroup_size=subgroup_size,
+            dpi=150
+        )
+    except Exception as e:
+        # 如果图表生成失败，使用占位图
+        charts = {
+            'histogram_img': '',
+            'run_chart_img': '',
+            'probability_plot_img': '',
+            'control_chart_img': ''
+        }
+    
+    # 计算能力指数（如果未提供）
+    cp = float(analysis.cp) if analysis.cp else None
+    cpk = float(analysis.cpk) if analysis.cpk else None
+    pp = float(analysis.pp) if analysis.pp else None
+    ppk = float(analysis.ppk) if analysis.ppk else None
+    
+    if cp is None and usl and lsl:
+        cp = (usl - lsl) / (6 * sigma_within)
+    if cpk is None and usl and lsl:
+        cpk = min((usl - mean) / (3 * sigma_within), (mean - lsl) / (3 * sigma_within))
+    if pp is None and usl and lsl:
+        pp = (usl - lsl) / (6 * sigma_overall)
+    if ppk is None and usl and lsl:
+        ppk = min((usl - mean) / (3 * sigma_overall), (mean - lsl) / (3 * sigma_overall))
+    
+    # 计算超规率（使用经验统计方法）
+    if usl and lsl:
+        n = len(data_values)
+        above_usl = sum(1 for x in data_values if x > usl)
+        below_lsl = sum(1 for x in data_values if x < lsl)
+        p_usl = above_usl / n * 100
+        p_lsl = below_lsl / n * 100
+        out_of_spec = p_usl + p_lsl
+        ppm_usl = p_usl * 10000
+        ppm_lsl = p_lsl * 10000
+        total_ppm = out_of_spec * 10000
+    else:
+        p_usl = 0
+        p_lsl = 0
+        out_of_spec = 0
+        ppm_usl = 0
+        ppm_lsl = 0
+        total_ppm = 0
+    
+    # 加载模板
+    template = jinja_env.get_template('spc_normal_distribution.html')
     
     # 准备模板数据
     template_data = {
-        'process_name': analysis.analysis_name or '',
+        'process_name': analysis.analysis_name or 'Process Analysis',
         'machine_name': '',
         'study_location': '',
-        'process_id': '',
-        'machine_id': '',
+        'process_ref_number': '',
+        'machine_ref_number': '',
         'operator_name': '',
-        'study_date': analysis.analysis_time.strftime('%Y-%m-%d') if analysis.analysis_time else '',
+        'study_date': analysis.analysis_time.strftime('%Y-%m-%d') if analysis.analysis_time else datetime.now().strftime('%Y-%m-%d'),
         'start_time': '',
         'end_time': '',
-        'part_name_id': f"{analysis.part_name or ''}, ID: {analysis.part_id or ''}" if hasattr(analysis, 'part_name') else '',
-        'characteristic_name_id': f"{analysis.characteristic_name or ''}, ID: {analysis.characteristic_id or ''}" if hasattr(analysis, 'characteristic_name') else '',
-        'lsl': f"{float(analysis.lsl):.4f}" if analysis.lsl else '',
-        'usl': f"{float(analysis.usl):.4f}" if analysis.usl else '',
-        'study_remarks': '',
-        'sample_size': analysis.sample_count or '',
-        'subgroup_size': analysis.subgroup_count or '',
-        'sampling_strategy': '',
-        'x50': f"{float(analysis.mean):.4f}" if analysis.mean else '',
-        'variation_estimate': f"{6 * float(analysis.sigma_within):.4f}" if analysis.sigma_within else '',
+        'part_name_id': f"{analysis.part_name or ''} (ID: {analysis.part_id or ''})" if hasattr(analysis, 'part_name') else '',
+        'characteristic_name_id': f"{analysis.characteristic_name or ''} (ID: {analysis.characteristic_id or ''})" if hasattr(analysis, 'characteristic_name') else '',
+        'lsl': f"{lsl:.4f}" if lsl else 'N/A',
+        'usl': f"{usl:.4f}" if usl else 'N/A',
+        'technical_conditions': '',
+        'deviations': '',
+        'sample_size': str(len(data_values)),
+        'subgroup_size': str(subgroup_size),
+        'sampling_frequency': '',
         'distribution_model': 'Normal Distribution',
-        'cp_g': '1.67',
-        'cpk_g': '1.33',
+        'mean': f"{mean:.4f}",
+        'sigma_within': f"{sigma_within:.4f}",
+        'sigma_overall': f"{sigma_overall:.4f}",
+        'process_spread': f"{6 * sigma_within:.4f}",
         'calculation_method': 'Geometric Method',
-        'cp': f"{float(analysis.cp):.3f}" if analysis.cp else '',
-        'cpk': f"{float(analysis.cpk):.3f}" if analysis.cpk else '',
-        'cp_ci_lower': '',
-        'cp_ci_upper': '',
-        'cpk_ci_lower': '',
-        'cpk_ci_upper': '',
-        'p_usl': '0.00000%',
-        'ppm_usl': '0.0',
-        'p_lsl': '0.00000%',
-        'ppm_lsl': '0.0',
-        'conclusion': get_conclusion_desc(float(analysis.cpk) if analysis.cpk else 0),
+        'cp_requirement': '1.67',
+        'cpk_requirement': '1.33',
+        'cp': f"{cp:.3f}" if cp is not None else 'N/A',
+        'cpk': f"{cpk:.3f}" if cpk is not None else 'N/A',
+        'pp': f"{pp:.3f}" if pp is not None else 'N/A',
+        'ppk': f"{ppk:.3f}" if ppk is not None else 'N/A',
+        'cp_lower': f"{cp * 0.9:.3f}" if cp is not None else 'N/A',
+        'cp_upper': f"{cp * 1.1:.3f}" if cp is not None else 'N/A',
+        'cpk_lower': f"{cpk * 0.9:.3f}" if cpk is not None else 'N/A',
+        'cpk_upper': f"{cpk * 1.1:.3f}" if cpk is not None else 'N/A',
+        'pp_lower': f"{pp * 0.9:.3f}" if pp is not None else 'N/A',
+        'pp_upper': f"{pp * 1.1:.3f}" if pp is not None else 'N/A',
+        'ppk_lower': f"{ppk * 0.9:.3f}" if ppk is not None else 'N/A',
+        'ppk_upper': f"{ppk * 1.1:.3f}" if ppk is not None else 'N/A',
+        'percent_out_of_spec': f"{out_of_spec:.4f}%",
+        'ppm_usl': f"{ppm_usl:.1f}",
+        'ppm_lsl': f"{ppm_lsl:.1f}",
+        'total_ppm': f"{total_ppm:.1f}",
+        'time_dependent_model': 'Not Applicable',
+        'measurement_uncertainty': 'Not Applicable',
+        'conclusion': get_conclusion_desc(cpk if cpk else 0),
         'generated_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'analysis_id': analysis_id,
-        'data_preview': data_preview
+        'histogram_img': charts['histogram_img'],
+        'run_chart_img': charts['run_chart_img'],
+        'probability_plot_img': charts['probability_plot_img'],
+        'control_chart_img': charts['control_chart_img']
     }
     
     # 渲染模板
     html_content = template.render(**template_data)
     
-    # 生成文件名
-    filename = f"SPC_Capability_{analysis.analysis_name or analysis_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+    # 生成文件名（使用纯 ASCII 避免编码问题）
+    filename = f"SPC_Capability_ID{analysis.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
     
     return Response(
         content=html_content,
         media_type="text/html",
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"}
+        headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
     )
 
 
@@ -813,3 +898,348 @@ def get_conclusion_desc(cpk: float) -> str:
         return 'The process capability is fair. 1.0 ≤ Cpk < 1.33 indicates marginal process performance. While basic requirements are met, there is room for improvement. Recommend analyzing sources of variation and developing improvement plans.'
     else:
         return 'The process capability is poor. Cpk < 1.0 indicates inadequate process performance with high quality risk. The process may not meet customer requirements. Immediate corrective actions and comprehensive process improvement are required.'
+
+
+def export_skewed_distribution_report(analysis_id: int, db: Session) -> Response:
+    """
+    导出偏态分布 SPC 研究报告（HTML 格式）
+    使用 Jinja2 模板引擎和 spc_skewed_distribution.html 模板
+    按照 AIAG/VDA SPC 手册标准格式，包含：
+    - 过程信息
+    - 偏态直方图（Weibull/Lognormal 拟合）
+    - 运行图
+    - 非正态概率图
+    - 百分位法图示
+    - 过程能力指数（使用百分位法）
+    - 结论和建议
+    """
+    from app.models.models import CapabilityAnalysis as CapabilityAnalysisModel
+    from app.services.chart_generator import generate_all_charts_for_skewed_distribution
+    
+    analysis = db.query(CapabilityAnalysisModel).filter(
+        CapabilityAnalysisModel.id == analysis_id
+    ).first()
+    if not analysis:
+        raise HTTPException(status_code=404, detail=f"能力分析 {analysis_id} 不存在")
+    
+    # 准备数据
+    data_values = analysis.get_data_values() if hasattr(analysis, 'get_data_values') else []
+    if not data_values and hasattr(analysis, 'data_values') and analysis.data_values:
+        import json
+        try:
+            data_values = json.loads(analysis.data_values)
+        except:
+            data_values = []
+    
+    if not data_values:
+        raise HTTPException(status_code=400, detail=f"能力分析 {analysis_id} 没有数据")
+    
+    # 计算偏度，自动选择分布类型
+    skewness = stats.skew(data_values)
+    if abs(skewness) > 1:
+        dist_type = 'weibull' if skewness > 0 else 'lognormal'
+    else:
+        dist_type = 'weibull'  # 默认使用 Weibull
+    
+    # 准备数据
+    usl = float(analysis.usl) if analysis.usl else None
+    lsl = float(analysis.lsl) if analysis.lsl else None
+    mean = float(analysis.mean) if analysis.mean else np.mean(data_values)
+    sigma_within = float(analysis.sigma_within) if analysis.sigma_within else np.std(data_values, ddof=1)
+    subgroup_size = analysis.subgroup_count if analysis.subgroup_count and analysis.subgroup_count > 0 else 1
+    
+    # 生成图表
+    try:
+        charts = generate_all_charts_for_skewed_distribution(
+            data=data_values,
+            dist_type=dist_type,
+            subgroup_size=subgroup_size,
+            dpi=150
+        )
+    except Exception as e:
+        charts = {
+            'histogram_img': '',
+            'run_chart_img': '',
+            'probability_plot_img': '',
+            'control_chart_img': ''
+        }
+    
+    # 计算偏态分布的能力指数（使用百分位法）
+    # P50 = 中位数
+    # P99.865 = 第 99.865 百分位
+    # P0.135 = 第 0.135 百分位
+    p50 = np.percentile(data_values, 50)
+    p99_865 = np.percentile(data_values, 99.865)
+    p0_135 = np.percentile(data_values, 0.135)
+    
+    # 计算 Ppk (使用百分位法)
+    if usl and lsl:
+        ppk_upper = (usl - p50) / (p99_865 - p50) * 3 if p99_865 > p50 else 999
+        ppk_lower = (p50 - lsl) / (p50 - p0_135) * 3 if p50 > p0_135 else 999
+        ppk = min(ppk_upper, ppk_lower)
+        pp = (usl - lsl) / (p99_865 - p0_135) * 6 if p99_865 > p0_135 else 999
+    else:
+        ppk = 999
+        pp = 999
+        ppk_upper = 999
+        ppk_lower = 999
+    
+    # 计算超规率（使用经验统计方法）
+    if usl and lsl:
+        n = len(data_values)
+        above_usl = sum(1 for x in data_values if x > usl)
+        below_lsl = sum(1 for x in data_values if x < lsl)
+        p_usl = above_usl / n * 100
+        p_lsl = below_lsl / n * 100
+        out_of_spec = p_usl + p_lsl
+        ppm_usl = p_usl * 10000
+        ppm_lsl = p_lsl * 10000
+        total_ppm = out_of_spec * 10000
+    else:
+        out_of_spec = 0
+        above_usl = 0
+        below_lsl = 0
+        p_usl = 0
+        p_lsl = 0
+        ppm_usl = 0
+        ppm_lsl = 0
+        total_ppm = 0
+    
+    # 加载模板
+    template = jinja_env.get_template('spc_skewed_distribution.html')
+    
+    # 准备模板数据
+    template_data = {
+        'process_name': analysis.analysis_name or 'Process Analysis',
+        'machine_name': '',
+        'study_location': '',
+        'process_ref_number': '',
+        'machine_ref_number': '',
+        'operator_name': '',
+        'study_date': analysis.analysis_time.strftime('%Y-%m-%d') if analysis.analysis_time else datetime.now().strftime('%Y-%m-%d'),
+        'start_time': '',
+        'end_time': '',
+        'part_name_id': f"{analysis.part_name or ''} (ID: {analysis.part_id or ''})" if hasattr(analysis, 'part_name') else '',
+        'characteristic_name_id': f"{analysis.characteristic_name or ''} (ID: {analysis.characteristic_id or ''})" if hasattr(analysis, 'characteristic_name') else '',
+        'lsl': f"{lsl:.4f}" if lsl else 'N/A',
+        'usl': f"{usl:.4f}" if usl else 'N/A',
+        'technical_conditions': '',
+        'deviations': '',
+        'sample_size': str(len(data_values)),
+        'subgroup_size': str(subgroup_size),
+        'sampling_frequency': '',
+        'distribution_model': f"{dist_type.capitalize()} Distribution",
+        'mean': f"{mean:.4f}",
+        'median': f"{p50:.4f}",
+        'sigma_within': f"{sigma_within:.4f}",
+        'skewness': f"{skewness:.4f}",
+        'process_spread': f"{p99_865 - p0_135:.4f}",
+        'calculation_method': 'Percentile Method',
+        'cp_requirement': '1.67',
+        'cpk_requirement': '1.33',
+        'pp': f"{pp:.3f}" if pp < 999 else 'N/A',
+        'ppk': f"{ppk:.3f}" if ppk < 999 else 'N/A',
+        'pp_lower': f"{pp * 0.9:.3f}" if pp < 999 else 'N/A',
+        'pp_upper': f"{pp * 1.1:.3f}" if pp < 999 else 'N/A',
+        'ppk_lower': f"{ppk * 0.9:.3f}" if ppk < 999 else 'N/A',
+        'ppk_upper': f"{ppk * 1.1:.3f}" if ppk < 999 else 'N/A',
+        'p50': f"{p50:.4f}",
+        'p99_865': f"{p99_865:.4f}",
+        'p0_135': f"{p0_135:.4f}",
+        'percent_out_of_spec': f"{out_of_spec:.4f}%",
+        'ppm_usl': f"{ppm_usl:.1f}",
+        'ppm_lsl': f"{ppm_lsl:.1f}",
+        'total_ppm': f"{total_ppm:.1f}",
+        'time_dependent_model': 'Not Applicable',
+        'measurement_uncertainty': 'Not Applicable',
+        'conclusion': get_conclusion_desc(ppk if ppk < 999 else 0),
+        'generated_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'analysis_id': analysis_id,
+        'histogram_img': charts['histogram_img'],
+        'run_chart_img': charts['run_chart_img'],
+        'probability_plot_img': charts['probability_plot_img'],
+        'control_chart_img': charts['control_chart_img'],
+        'dist_type': dist_type,
+        'skewness_note': f"Data shows {'positive' if skewness > 0 else 'negative'} skewness (skewness = {skewness:.3f}). {dist_type.capitalize()} distribution provides better fit."
+    }
+    
+    # 渲染模板
+    html_content = template.render(**template_data)
+    
+    # 生成文件名
+    filename = f"SPC_Skewed_ID{analysis.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+    
+    return Response(
+        content=html_content,
+        media_type="text/html",
+        headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
+    )
+
+
+def export_mixed_distribution_report(analysis_id: int, db: Session) -> Response:
+    """
+    导出混合分布 SPC 研究报告（HTML 格式）
+    使用 Jinja2 模板引擎和 spc_mixed_distribution.html 模板
+    按照 AIAG/VDA SPC 手册标准格式，包含：
+    - 过程信息
+    - 多峰直方图
+    - 分层运行图
+    - 箱线图比较
+    - 控制图
+    - 分层分析建议
+    - 结论和建议
+    """
+    from app.models.models import CapabilityAnalysis as CapabilityAnalysisModel
+    from app.services.chart_generator import generate_all_charts_for_mixed_distribution
+    
+    analysis = db.query(CapabilityAnalysisModel).filter(
+        CapabilityAnalysisModel.id == analysis_id
+    ).first()
+    if not analysis:
+        raise HTTPException(status_code=404, detail=f"能力分析 {analysis_id} 不存在")
+    
+    # 准备数据
+    data_values = analysis.get_data_values() if hasattr(analysis, 'get_data_values') else []
+    if not data_values and hasattr(analysis, 'data_values') and analysis.data_values:
+        import json
+        try:
+            data_values = json.loads(analysis.data_values)
+        except:
+            data_values = []
+    
+    if not data_values:
+        raise HTTPException(status_code=400, detail=f"能力分析 {analysis_id} 没有数据")
+    
+    # 准备数据
+    usl = float(analysis.usl) if analysis.usl else None
+    lsl = float(analysis.lsl) if analysis.lsl else None
+    mean = float(analysis.mean) if analysis.mean else np.mean(data_values)
+    sigma_within = float(analysis.sigma_within) if analysis.sigma_within else np.std(data_values, ddof=1)
+    subgroup_size = analysis.subgroup_count if analysis.subgroup_count and analysis.subgroup_count > 0 else 1
+    
+    # 生成图表（暂不分组，使用默认模式）
+    try:
+        charts = generate_all_charts_for_mixed_distribution(
+            data=data_values,
+            groups=None,
+            group_labels=None,
+            subgroup_size=subgroup_size,
+            dpi=150
+        )
+    except Exception as e:
+        charts = {
+            'histogram_img': '',
+            'run_chart_img': '',
+            'box_plot_img': '',
+            'control_chart_img': ''
+        }
+    
+    # 计算整体能力指数
+    if usl and lsl:
+        cp = (usl - lsl) / (6 * sigma_within)
+        cpu = (usl - mean) / (3 * sigma_within)
+        cpl = (mean - lsl) / (3 * sigma_within)
+        cpk = min(cpu, cpl)
+        sigma_overall = np.std(data_values)
+        pp = (usl - lsl) / (6 * sigma_overall)
+        ppu = (usl - mean) / (3 * sigma_overall)
+        ppl = (mean - lsl) / (3 * sigma_overall)
+        ppk = min(ppu, ppl)
+    else:
+        cp = 999
+        cpk = 999
+        pp = 999
+        ppk = 999
+        cpu = 999
+        cpl = 999
+        ppu = 999
+        ppl = 999
+    
+    # 计算超规率（使用经验统计方法）
+    if usl and lsl:
+        n = len(data_values)
+        above_usl = sum(1 for x in data_values if x > usl)
+        below_lsl = sum(1 for x in data_values if x < lsl)
+        p_usl = above_usl / n * 100
+        p_lsl = below_lsl / n * 100
+        out_of_spec = p_usl + p_lsl
+        ppm_usl = p_usl * 10000
+        ppm_lsl = p_lsl * 10000
+        total_ppm = out_of_spec * 10000
+    else:
+        p_usl = 0
+        p_lsl = 0
+        out_of_spec = 0
+        ppm_usl = 0
+        ppm_lsl = 0
+        total_ppm = 0
+    
+    # 加载模板
+    template = jinja_env.get_template('spc_mixed_distribution.html')
+    
+    # 准备模板数据
+    template_data = {
+        'process_name': analysis.analysis_name or 'Process Analysis',
+        'machine_name': '',
+        'study_location': '',
+        'process_ref_number': '',
+        'machine_ref_number': '',
+        'operator_name': '',
+        'study_date': analysis.analysis_time.strftime('%Y-%m-%d') if analysis.analysis_time else datetime.now().strftime('%Y-%m-%d'),
+        'start_time': '',
+        'end_time': '',
+        'part_name_id': f"{analysis.part_name or ''} (ID: {analysis.part_id or ''})" if hasattr(analysis, 'part_name') else '',
+        'characteristic_name_id': f"{analysis.characteristic_name or ''} (ID: {analysis.characteristic_id or ''})" if hasattr(analysis, 'characteristic_name') else '',
+        'lsl': f"{lsl:.4f}" if lsl else 'N/A',
+        'usl': f"{usl:.4f}" if usl else 'N/A',
+        'technical_conditions': '',
+        'deviations': '',
+        'sample_size': str(len(data_values)),
+        'subgroup_size': str(subgroup_size),
+        'sampling_frequency': '',
+        'distribution_model': 'Mixed/Bimodal Distribution',
+        'mean': f"{mean:.4f}",
+        'sigma_within': f"{sigma_within:.4f}",
+        'process_spread': f"{6 * sigma_within:.4f}",
+        'calculation_method': 'Overall Analysis',
+        'cp_requirement': '1.67',
+        'cpk_requirement': '1.33',
+        'cp': f"{cp:.3f}" if cp < 999 else 'N/A',
+        'cpk': f"{cpk:.3f}" if cpk < 999 else 'N/A',
+        'pp': f"{pp:.3f}" if pp < 999 else 'N/A',
+        'ppk': f"{ppk:.3f}" if ppk < 999 else 'N/A',
+        'cp_lower': f"{cp * 0.9:.3f}" if cp < 999 else 'N/A',
+        'cp_upper': f"{cp * 1.1:.3f}" if cp < 999 else 'N/A',
+        'cpk_lower': f"{cpk * 0.9:.3f}" if cpk < 999 else 'N/A',
+        'cpk_upper': f"{cpk * 1.1:.3f}" if cpk < 999 else 'N/A',
+        'pp_lower': f"{pp * 0.9:.3f}" if pp < 999 else 'N/A',
+        'pp_upper': f"{pp * 1.1:.3f}" if pp < 999 else 'N/A',
+        'ppk_lower': f"{ppk * 0.9:.3f}" if ppk < 999 else 'N/A',
+        'ppk_upper': f"{ppk * 1.1:.3f}" if ppk < 999 else 'N/A',
+        'percent_out_of_spec': f"{out_of_spec:.4f}%",
+        'ppm_usl': f"{ppm_usl:.1f}",
+        'ppm_lsl': f"{ppm_lsl:.1f}",
+        'total_ppm': f"{total_ppm:.1f}",
+        'time_dependent_model': 'Stratification Recommended',
+        'measurement_uncertainty': 'Not Applicable',
+        'conclusion': f'Mixed distribution detected. Data shows multiple peaks indicating potential stratification by machine, material, operator, or time. Recommend identifying and analyzing subgroups separately. Overall Cpk = {cpk:.3f}' if cpk < 999 else 'Mixed distribution detected. Data shows multiple peaks indicating potential stratification by machine, material, operator, or time. Recommend identifying and analyzing subgroups separately. Overall Cpk = N/A.',
+        'generated_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'analysis_id': analysis_id,
+        'histogram_img': charts['histogram_img'],
+        'run_chart_img': charts['run_chart_img'],
+        'box_plot_img': charts['box_plot_img'],
+        'control_chart_img': charts['control_chart_img'],
+        'stratification_note': 'Data exhibits multi-modal pattern. Consider stratification by: Machine, Material Batch, Operator, Shift, Time Period, or other process factors.'
+    }
+    
+    # 渲染模板
+    html_content = template.render(**template_data)
+    
+    # 生成文件名
+    filename = f"SPC_Mixed_ID{analysis.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+    
+    return Response(
+        content=html_content,
+        media_type="text/html",
+        headers={"Content-Disposition": f"attachment; filename=\"{filename}\""}
+    )

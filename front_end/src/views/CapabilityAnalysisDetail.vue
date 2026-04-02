@@ -268,6 +268,71 @@
           </div>
         </div>
 
+        <div class="charts-section" v-if="analysis?.data_values?.length">
+          <h2 class="section-title">
+            <span class="section-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="20" x2="18" y2="10"/>
+                <line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+            </span>
+            数据可视化
+          </h2>
+
+          <div class="charts-grid">
+            <div class="chart-card">
+              <HistogramChart
+                :data="analysis.data_values"
+                :mean="parseFloat(analysis.mean)"
+                :std="parseFloat(analysis.sigma_within)"
+                :usl="parseFloat(analysis.usl)"
+                :lsl="parseFloat(analysis.lsl)"
+                title="数据分布直方图"
+              />
+            </div>
+
+            <div class="chart-card">
+              <RunChart
+                :data="analysis.data_values"
+                :mean="parseFloat(analysis.mean)"
+                title="数据运行图"
+              />
+            </div>
+          </div>
+
+          <div class="gauge-grid">
+            <div class="gauge-card">
+              <CapabilityGauge
+                :value="indices?.cp?.value || 0"
+                name="Cp"
+                :requirement="1.67"
+              />
+            </div>
+            <div class="gauge-card">
+              <CapabilityGauge
+                :value="indices?.cpk?.value || 0"
+                name="Cpk"
+                :requirement="1.33"
+              />
+            </div>
+            <div class="gauge-card">
+              <CapabilityGauge
+                :value="indices?.pp?.value || 0"
+                name="Pp"
+                :requirement="1.67"
+              />
+            </div>
+            <div class="gauge-card">
+              <CapabilityGauge
+                :value="indices?.ppk?.value || 0"
+                name="Ppk"
+                :requirement="1.33"
+              />
+            </div>
+          </div>
+        </div>
+
         <div class="evaluation-section">
           <h2 class="section-title">
             <span class="section-icon">
@@ -333,6 +398,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { showMessage } from '@/utils/dialog'
 import * as echarts from 'echarts'
 import Menu from '@/components/Menu.vue'
+import HistogramChart from '@/components/charts/HistogramChart.vue'
+import RunChart from '@/components/charts/RunChart.vue'
+import CapabilityGauge from '@/components/charts/CapabilityGauge.vue'
 import { getCapabilityAnalysis, exportCapabilityReport } from '@/api'
 import type { CapabilityAnalysisResult, CapabilityIndices } from '@/types'
 
@@ -1268,5 +1336,59 @@ onMounted(() => {
   .scale-items {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gauge-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.charts-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.chart-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  transition: all var(--transition-fast);
+}
+
+.chart-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.gauge-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.gauge-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  transition: all var(--transition-fast);
+}
+
+.gauge-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 </style>

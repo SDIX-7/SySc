@@ -101,6 +101,43 @@
           <el-tabs v-model="activeTab">
             <el-tab-pane label="步骤" name="steps">
               <div class="tab-content">
+                <div v-if="ocap.steps && ocap.steps.length > 0" class="steps-progress">
+                  <div class="progress-header">
+                    <div class="progress-title">
+                      <span>步骤进度</span>
+                      <el-tag type="danger">{{ stepProgress.completed }}/{{ stepProgress.total }}</el-tag>
+                    </div>
+                    <div class="progress-percentage">{{ stepProgress.percentage }}%</div>
+                  </div>
+                  <el-progress
+                    :percentage="stepProgress.percentage"
+                    :color="stepProgressColors"
+                    :stroke-width="20"
+                  />
+                  <div class="progress-stats">
+                    <div class="stat-item">
+                      <el-icon class="stat-icon completed"><SuccessFilled /></el-icon>
+                      <span class="stat-value">{{ stepProgress.completed }}</span>
+                      <span class="stat-label">已完成</span>
+                    </div>
+                    <div class="stat-item">
+                      <el-icon class="stat-icon in-progress"><Clock /></el-icon>
+                      <span class="stat-value">{{ stepProgress.inProgress }}</span>
+                      <span class="stat-label">进行中</span>
+                    </div>
+                    <div class="stat-item">
+                      <el-icon class="stat-icon pending"><More /></el-icon>
+                      <span class="stat-value">{{ stepProgress.pending }}</span>
+                      <span class="stat-label">待处理</span>
+                    </div>
+                    <div class="stat-item">
+                      <el-icon class="stat-icon overdue"><WarningFilled /></el-icon>
+                      <span class="stat-value">{{ stepProgress.overdue }}</span>
+                      <span class="stat-label">已逾期</span>
+                    </div>
+                  </div>
+                </div>
+
                 <div v-if="ocap.steps && ocap.steps.length > 0" class="steps-list">
                   <div v-for="step in groupedSteps.containment" :key="step.id" class="step-group">
                     <div class="step-phase">遏制阶段</div>
@@ -352,8 +389,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import Menu from '@/components/Menu.vue'
 import { getOCAP, exportOCAPExcel } from '@/api/ocap'
+import { SuccessFilled, Clock, More, WarningFilled } from '@element-plus/icons-vue'
 import type { 
   OCAP, 
   OCAPStep, 
@@ -375,6 +414,49 @@ const ocapId = Number(route.params.ocapId)
 const ocap = ref<OCAP | null>(null)
 const loading = ref(false)
 const activeTab = ref('steps')
+
+const stepProgress = computed(() => {
+  if (!ocap.value?.steps || ocap.value.steps.length === 0) {
+    return {
+      total: 0,
+      completed: 0,
+      inProgress: 0,
+      pending: 0,
+      overdue: 0,
+      percentage: 0
+    }
+  }
+
+  const steps = ocap.value.steps
+  const total = steps.length
+  const completed = steps.filter(s => s.status === 'completed' || s.status === 'verified').length
+  const inProgress = steps.filter(s => s.status === 'in_progress' || s.status === 'executing').length
+  const pending = steps.filter(s => s.status === 'pending' || s.status === 'not_started').length
+
+  // Count overdue steps (have deadline and are not completed)
+  const now = new Date()
+  const overdue = steps.filter(s => {
+    if (s.status === 'completed' || s.status === 'verified') return false
+    if (!s.deadline) return false
+    return new Date(s.deadline) < now
+  }).length
+
+  return {
+    total,
+    completed,
+    inProgress,
+    pending,
+    overdue,
+    percentage: total > 0 ? Math.round((completed / total) * 100) : 0
+  }
+})
+
+const stepProgressColors = [
+  { color: '#67c23a', percentage: 25 },
+  { color: '#e6a23c', percentage: 50 },
+  { color: '#f56c6c', percentage: 75 },
+  { color: '#909399', percentage: 100 }
+]
 
 const groupedSteps = computed(() => {
   const groups: Record<OCAPPhase, OCAPStep[]> = {
@@ -784,6 +866,84 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   padding: 60px;
+  color: var(--text-muted);
+}
+
+.steps-progress {
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  border: 2px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.progress-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.progress-percentage {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--accent-primary);
+}
+
+.progress-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px;
+  background: white;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+.stat-icon {
+  font-size: 1.5rem;
+}
+
+.stat-icon.completed {
+  color: #67c23a;
+}
+
+.stat-icon.in-progress {
+  color: #e6a23c;
+}
+
+.stat-icon.pending {
+  color: #909399;
+}
+
+.stat-icon.overdue {
+  color: #f56c6c;
+}
+
+.stat-value {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.stat-label {
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 

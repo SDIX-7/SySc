@@ -7,6 +7,19 @@ back_end/images/*
 back_end/yolo11n.pt
 email_test.py
 
+# Python 缓存文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 测试文件和数据库
+back_end/test_*.db
+back_end/test_*.html
+back_end/test_*.py
+back_end/report_*.html
+
 # 忽略Node.js相关文件
 front_end/node_modules/
 front_end/dist/
